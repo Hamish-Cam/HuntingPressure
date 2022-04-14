@@ -5,8 +5,7 @@ library(fields)
 library(rnaturalearth)
 
 # Store the Access Key obtained from the eBird website
-# THIS REQUIRES FILLING IN BY USER
-set_ebirdst_access_key("XXXXX")
+set_ebirdst_access_key("f3put69k2c89")
 
 # download example data, yellow-bellied sapsucker in michigan
 dl_path <- ebirdst_download(species = "example_data")
