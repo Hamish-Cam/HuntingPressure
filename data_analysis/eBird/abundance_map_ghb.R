@@ -39,7 +39,7 @@ if (!dir.exists("output")) {
 #### Data Prep/Loading #### 
 
 # ebird data
-ebird <- read_csv("data/ebd_woothr_june_bcr27_zf.csv") %>% 
+ebird <- read_csv("data-ghb/ebd_ghb_india_zf.csv") %>% 
   # Make the 'protocol type' column categorical with 2 options 
   mutate(protocol_type = factor(protocol_type, 
                                 levels = c("Stationary" , "Traveling"))) %>%
@@ -48,7 +48,7 @@ ebird <- read_csv("data/ebd_woothr_june_bcr27_zf.csv") %>%
 
 # modis habitat covariates (landcover proportion and elevation information 
 # summarized by neighbourhoods around checklist locations)
-habitat <- read_csv("data/pland-elev_location-year.csv") %>% 
+habitat <- read_csv("data-ghb/pland-elev_location-year.csv") %>% 
   mutate(year = as.integer(year))
 
 # combine ebird and habitat data (add env data for each observation)
@@ -57,30 +57,31 @@ ebird_habitat <- inner_join(ebird, habitat, by = c("locality_id", "year"))
 # prediction surface - this is a regular grid of landcover type/elevation (our
 # habitat covariates) that we can use to make predictions for the whole prediction region
 # NOTE: this is NOT the same thing as the habitat covariate data seen
-pred_surface <- read_csv("data/pland-elev_prediction-surface.csv")
+pred_surface <- read_csv("data-ghb/pland-elev_prediction-surface.csv")
+# CHANGED
 
 # latest year of landcover data available 
 max_lc_year <- pred_surface$year[1]
 
 # This is a raster file defining the prediction area (uses the same crs/grid as 
 # the rest of the prediction surface data)
-r <- raster("data/prediction-surface.tif")
+r <- raster("data-ghb/prediction-surface.tif")
 
 # load gis data for making maps (land boundary, bcr, country and state lines for
 # plotting the data on a map) - ne = naturalEarth (R package for GIS)
-map_proj <- st_crs(5070)
-ne_land <- read_sf("data/gis-data.gpkg", "ne_land") %>% 
-  st_transform(crs = map_proj) %>% 
+#map_proj <- st_crs(5070)
+ne_land <- read_sf("data-ghb/gis-data.gpkg", "ne_land") %>% 
+  #st_transform(crs = map_proj) %>% 
   st_geometry()
-bcr <- read_sf("data/gis-data.gpkg", "bcr") %>% 
-  st_transform(crs = map_proj) %>% 
-  st_geometry()
-ne_country_lines <- read_sf("data/gis-data.gpkg", "ne_country_lines") %>% 
-  st_transform(crs = map_proj) %>% 
-  st_geometry()
-ne_state_lines <- read_sf("data/gis-data.gpkg", "ne_state_lines") %>% 
-  st_transform(crs = map_proj) %>% 
-  st_geometry()
+#bcr <- read_sf("data/gis-data.gpkg", "bcr") %>% 
+  #st_transform(crs = map_proj) %>% 
+  #st_geometry()
+#ne_country_lines <- read_sf("data/gis-data.gpkg", "ne_country_lines") %>% 
+  #st_transform(crs = map_proj) %>% 
+  #st_geometry()
+#ne_state_lines <- read_sf("data/gis-data.gpkg", "ne_state_lines") %>% 
+  #st_transform(crs = map_proj) %>% 
+  #st_geometry()
 #### end ####
 
 
@@ -121,10 +122,10 @@ ebird_ss <- checklist_cell %>%
 
 # Here, we keep only the relevant habitat covariates for THIS SPECIES
 # NOTE: Those kept should be informed apriori and will change depending on species
-hab_covs <- c("pland_04_deciduous_broadleaf", 
+hab_covs <- c("pland_02_evergreen_broadleaf", 
+              "pland_04_deciduous_broadleaf", 
               "pland_05_mixed_forest",
-              "pland_12_cropland",
-              "pland_13_urban")
+              "pland_12_cropland")
 
 # Keep only columns used for analysis 
 ebird_split <- ebird_ss %>% 
@@ -413,7 +414,7 @@ ggplot(pred_tod) +
   geom_vline(xintercept = t_peak, color = "blue", linetype = "dashed") +
   labs(x = "Hours since midnight",
        y = "Predicted relative abundance",
-       title = "Effect of observation start time on Wood Thrush reporting",
+       title = "Effect of observation start time on Great Hornbill reporting",
        subtitle = "Peak detectability shown as dashed blue line")
 
 # Now we have everything we need to add effort covariates to the prediction surface
@@ -459,10 +460,10 @@ if (!dir.exists(tif_dir)) {
   dir.create(tif_dir)
 }
 writeRaster(r_pred[["abd"]], 
-            filename = file.path(tif_dir, "abundance-model_abd_woothr.tif"),
+            filename = file.path(tif_dir, "abundance-model_abd_ghb.tif"),
             overwrite = TRUE)
 writeRaster(r_pred[["abd_se"]], 
-            filename = file.path(tif_dir, "abundance-model_se_woothr.tif"), 
+            filename = file.path(tif_dir, "abundance-model_se_ghb.tif"), 
             overwrite = TRUE)
 
 # Now lets plot the results. The values obtained on this map are the expected number 
@@ -476,17 +477,16 @@ writeRaster(r_pred[["abd_se"]],
 zero_threshold <- 0.05
 
 # Change the CRS of the raster to match that of the GIS data for plotting
-r_pred_proj <- projectRaster(r_pred, crs = map_proj$proj4string, method = "ngb")
+r_pred_proj <- projectRaster(r_pred, crs = 4326, method = "ngb")
 
 # Plot the data for each layer (abd and abd_se)
-par(mfrow = c(2, 1))
 for (nm in names(r_pred)) {
   r_plot <- r_pred_proj[[nm]]
   
   # Set the plot area and add GIS components
   par(mar = c(3.5, 0.25, 0.25, 0.25))
-  plot(bcr, col = NA, border = NA)
-  plot(ne_land, col = "#dddddd", border = "#888888", lwd = 0.5, add = TRUE)
+  #plot(bcr, col = NA, border = NA)
+  plot(ne_land, col = "#dddddd", border = "#888888", lwd = 0.5)
   
   # Modified plasma (colour) palette
   plasma_rev <- rev(plasma(25, end = 0.9))
@@ -495,7 +495,7 @@ for (nm in names(r_pred)) {
   
   # Setup plot characetristics depending on whether abd or abd_se
   if (nm == "abd") {
-    title <- "Wood Thrush Relative Abundance"
+    title <- "Great Hornbill Relative Abundance"
     # set very low values to zero
     r_plot[r_plot <= zero_threshold] <- NA
     # log transform
@@ -507,7 +507,7 @@ for (nm in names(r_pred)) {
     lbl_brks <- sort(c(-2:2, mn, mx))
     lbls <- round(10^lbl_brks, 2)
   } else {
-    title <- "Wood Thrush Abundance Uncertainty (SE)"
+    title <- "Great Hornbill Abundance Uncertainty (SE)"
     # breaks and legend
     mx <- ceiling(1000 * cellStats(r_plot, max)) / 1000
     mn <- floor(1000 * cellStats(r_plot, min)) / 1000
@@ -523,9 +523,9 @@ for (nm in names(r_pred)) {
        legend = FALSE, add = TRUE)
   
   # Borders for GIS
-  plot(bcr, border = "#000000", col = NA, lwd = 1, add = TRUE)
-  plot(ne_state_lines, col = "#ffffff", lwd = 0.75, add = TRUE)
-  plot(ne_country_lines, col = "#ffffff", lwd = 1.5, add = TRUE)
+  #plot(bcr, border = "#000000", col = NA, lwd = 1, add = TRUE)
+  #plot(ne_state_lines, col = "#ffffff", lwd = 0.75, add = TRUE)
+  #plot(ne_country_lines, col = "#ffffff", lwd = 1.5, add = TRUE)
   box()
   
   # Legend

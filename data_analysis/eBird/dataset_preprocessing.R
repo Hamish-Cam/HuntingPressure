@@ -583,46 +583,6 @@ pland_coords <- st_transform(r_centers, crs = 4326) %>%
 
 #### MODIS Landcover Analysis ####
 
-# Would be useful if we could even just plot the box around a specific checklist
-# and plot the landcover types so we can semi-verify this against the proportions
-# assigned to this neighbourhood? 
-
-# Have to add which row to take 
-pland_coords <- read.csv(file = 'data-ghb/pland-elev_prediction-surface.csv')
-first_row <- pland_coords[286187,]
-
-neighborhood_radius <- 10 * ceiling(max(res(landcover))) / 2
-
-buffer_points_modis <-  first_row[, c("longitude","latitude")] %>%
-  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
-  st_transform(crs = projection(landcover)) %>%
-  st_buffer(dist = neighborhood_radius*2) %>%
-  st_as_sfc() %>%
-  as_Spatial()
-
-buffer_points_lat_lon <-  first_row[, c("longitude","latitude")] %>%
-  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
-  st_buffer(dist = neighborhood_radius) %>%
-  st_as_sfc() %>%
-  as_Spatial()
-
-# Get the correct layer of landcover data 
-year <- paste0("y", first_row[, "year"])
-lc_2020 = landcover[[year]]
-
-# Crop the raster to give rectangle in MODIS space 
-modis_rectangle <- crop(lc_2020, buffer_points_modis)    
-
-# Project back into lat/lon space 
-new_raster_projected <- projectRaster(modis_rectangle, crs = st_crs(4326)$proj4string, method = "ngb")
-
-# Now crop the reduced raster using the small bounding box 
-lat_lon_rectangle <- crop(new_raster_projected, buffer_points_lat_lon)
-
-# Plot the raster
-plot(lat_lon_rectangle)
-
-
 # Plot evergreen broadleaf coverage as a landcover map test
 forest_cover <- pland_coords %>% 
   # convert to spatial features and project onto prediction surface
