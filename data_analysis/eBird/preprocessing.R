@@ -473,9 +473,8 @@ ebird <- read_csv(csv_name)
 begin_year <- format(min(ebird$observation_date), "%Y.01.01")
 end_year <- format(max(ebird$observation_date), "%Y.12.31")
 
-# Store credentials for accessing MODIS data
+# Store credentials for accessing MODIS data and test connection
 MODIS::EarthdataLogin(usr = "hrac2", pwd = "mQ5taFmenGs9oHS")
-print("arrived")
 MODISoptions(check_earthdata_login = TRUE)
 
 # Download tiles for area of interest and combine into a single raster for each year
@@ -766,6 +765,7 @@ dev.off()
 # Finally, clean up the directory 
 unlink(file.path(data_folder, "ebd_filtered_output.txt"))
 unlink(file.path(data_folder, "ebd_samp_filtered_output.txt"))
+unlink(file.path(data_folder, "modis"), recursive=TRUE)
 
 
 
