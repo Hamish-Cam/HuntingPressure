@@ -51,7 +51,7 @@ library(sf)
 library(rnaturalearth)
 library(dplyr)
 library(raster)
-library(MODIS)
+library(MODIS) 
 library(exactextractr)
 library(viridis)
 library(tidyverse)
@@ -475,6 +475,8 @@ end_year <- format(max(ebird$observation_date), "%Y.12.31")
 
 # Store credentials for accessing MODIS data
 MODIS::EarthdataLogin(usr = "hrac2", pwd = "mQ5taFmenGs9oHS")
+print("arrived")
+MODISoptions(check_earthdata_login = TRUE)
 
 # Download tiles for area of interest and combine into a single raster for each year
 # then save into subfolder 'modis'
