@@ -3,6 +3,10 @@
 
 ################ Parameters ######################
 
+# Earthdata login credentials
+username = "hrac2"
+password = "mQ5taFmenGs9oHS"
+
 # Common name and scientific name of species 
 species_name <- "Great Hornbill"            
 species_name_scientific <- "Buceros bicornis"
