@@ -99,7 +99,7 @@ Once all of the above steps have been completed, the user is ready to start a ru
 4. Check the statistics of the completed run: `seff <job ID>`
 5. Check the *analytics* and *output data* folders for the relevant files and transfer them (either within JASMIN or to your local machine using `rsync`)
 
-**Example Slurm job script**
+## Example Slurm job script
 
     #!/bin/bash 
     #SBATCH --partition=test 
