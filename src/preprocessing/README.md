@@ -1,6 +1,6 @@
 ﻿
 
-# Preprocessing Guide
+# Preprocessing Overview
 The preprocessing code is written in the R language and is designed such that it can be run either locally or on the JASMIN HPC. The installation instructions given here are for running the code on JASMIN. 
 
 Following the steps outlined here and running the preprocessing code will result in all required datasets being downloaded and processed as required for further analysis. In addition, various plots are generated to help the user visualise the characteristics for their specific species of interest. 
@@ -8,20 +8,20 @@ Following the steps outlined here and running the preprocessing code will result
 The *preprocessing.R* script is the main code for preprocessing the data and should not need to be altered by the user. The *config.R* script contains variables that the user should alter depending on the experiments they wish to carry out. 
 
 
-## Data Download
+# Data Download
 The preprocessing code requires manual download of 3 datasets prior to running the program. Two of these datasets are from [eBird](https://ebird.org/home) and require an approved account to access the data. Once an account has been approved, follow the 3 steps outlined below:
 1. [eBird Basic Dataset (EBD)](https://ebird.org/data/download) - Sampling event data (required for obtaining presence/absence data)
 2. [eBird Basic Dataset (EBD)](https://ebird.org/data/download) - Checklist data (custom download). The species of interest should be selected, but all other filters left blank
 3. [EarthEnv Elevation Dataset](http://www.earthenv.org/topography) - Derived topographic continuous variables (elevation, median, GMTED2010, 1km)
 
-## JASMIN Setup 
+# JASMIN Setup 
 These steps assume that the user already: 
 
  - Has a JASMIN login account 
  - Can SSH into the JASMIN remote server (`ssh -A <username>@login1.jasmin.ac.uk`)
  - Knows how to transfer files onto/off of JASMIN (`rsync` recommended for these operations)
  
-**Package Installation**
+## Package Installation
 The first step is to ensure the necessary R packages are installed on JASMIN: 
  1. Load the jaspy module: `module load jasr`
  2. Start the R command line: `R`
@@ -32,7 +32,7 @@ The first step is to ensure the necessary R packages are installed on JASMIN:
 MODISoptions(check_earthdata_login = TRUE)`
 
 
-**Directory Setup**
+## Directory Setup
 Once the relevant datasets have been downloaded (info above), along with the *preprocessing.R*/*config.R* scripts, and transferred onto the JASMIN servers, the correct directory structure must be setup (naming convention must match those stated below): 
 1. Place the eBird sampling data and elevation data into your home directory (use `cd ~` to find where this is)
 2. Make a project folder where for the *preprocessing.R* and *config.R* files to live in
@@ -50,7 +50,7 @@ In summary, the directory structure should be as follows:
             -> input data folder
                 -> eBird checklist data
 
-## Expected Output
+# Expected Output
 After a run has been completed (see below), the following outputs will be generated and placed in the *output data* subfolder: 
 1. GIS area of interest (AOI data: `gis-data.gpkg`
 2. eBird processed output data: `ebd_processed_output.csv`
@@ -91,7 +91,7 @@ In summary, the final directory structure will be as follows:
 
 
 
-## Completing a Run
+# Completing a Run
 Once all of the above steps have been completed, the user is ready to start a run. JASMIN users the SLURM system for scheduling jobs - once a job is complete the outputs described above should be available for transfer. An example workflow for submitting a job is given here:
 1. Write a Slurm submission script (example given below)
 2. Submit the job: `sbatch <slurm file>`
