@@ -23,7 +23,7 @@ data_folder <- "data-ghb"
 species_data <- "ebd_IN_grehor1_relFeb-2022.txt"
 
 # Path to permanent location containing sampling and elevation data
-perm_files_location = "~"
+perm_files_location <- "~"
 
 # Name of downloaded sampling data file 
 sampling_data <- "ebd_sampling_relFeb-2022.txt"
