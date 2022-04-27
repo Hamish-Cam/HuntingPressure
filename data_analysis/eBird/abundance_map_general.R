@@ -212,7 +212,7 @@ time_knots <- list(time_observations_started = seq(0, 24, length.out = k_time))
 # negative binomial - useful for data exhibiting 'over-dispersion' that is very 
 # common in ecological count data
 m_nb <- gam(gam_formula,
-            data = ebird_split$train, 
+            data = ebird_split, 
             family = "nb",
             knots = time_knots)
 
