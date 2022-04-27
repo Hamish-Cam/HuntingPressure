@@ -4,16 +4,17 @@
 ################ Parameters ######################
 
 # Common name of species 
-species_name <- "Red Grouse"  
+species_name <- "Great Hornbill"  
 
 # Name of the folder that contains input data folder
-data_folder <- "abun-grouse"
+data_folder <- "abun-ghb"
 
 # Relevant habitat covariates in the form: pland_<landcover code>_<landcover name> 
 # Selection is species dependent and can be informed using the IUCN RedList
-habitat_covariates <- c("pland_05_mixed_forest",
-                        "pland_07_open_shrubland", 
-                        "pland_10_grassland")
+habitat_covariates <- c("pland_02_evergreen_broadleaf", 
+                        "pland_04_deciduous_broadleaf", 
+                        "pland_05_mixed_forest",
+                        "pland_12_cropland")
 
 # GAM degrees of freedom 
 k <- 5
