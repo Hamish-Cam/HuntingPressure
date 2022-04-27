@@ -632,7 +632,10 @@ urban_cover <- pland_coords %>%
   st_transform(crs = projection(r)) %>% 
   
   # rasterize points
-  rasterize(r, field = "pland_13_urban") %>% 
+  rasterize(r, field = "pland_13_urban") %>%
+  
+  # project to correct crs
+  projectRaster(crs = st_crs(4326)$proj4string, method = "ngb") %>%
   
   # trim off empty edges of raster
   trim()
@@ -704,6 +707,9 @@ med_elev <- pland_elev_pred %>%
   
   # rasterize points
   rasterize(r, field = "elevation_median") %>% 
+  
+  # project to correct crs
+  projectRaster(crs = st_crs(4326)$proj4string, method = "ngb") %>%
   
   # trim off empty edges of raster
   trim()

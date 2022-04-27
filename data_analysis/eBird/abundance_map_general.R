@@ -46,7 +46,7 @@ if (!dir.exists(file.path(data_folder, "analytics"))){
 #### Data Prep/Loading #### 
 
 # ebird data
-ebird <- read_csv(file.path(data_folder, "ebd_processed_output.csv")) %>% 
+ebird <- read_csv(file.path(data_folder, "input data", "ebd_processed_output.csv")) %>% 
   # Make the 'protocol type' column categorical with 2 options 
   mutate(protocol_type = factor(protocol_type, 
                                 levels = c("Stationary" , "Traveling"))) %>%
@@ -55,7 +55,7 @@ ebird <- read_csv(file.path(data_folder, "ebd_processed_output.csv")) %>%
 
 # modis habitat covariates (landcover proportion and elevation information 
 # summarized by neighbourhoods around checklist locations)
-habitat <- read_csv(file.path(data_folder, "landcover_and_elevation_checklists.csv")) %>% 
+habitat <- read_csv(file.path(data_folder, "input data", "landcover_and_elevation_checklists.csv")) %>% 
   mutate(year = as.integer(year))
 
 # combine ebird and habitat data (add env data for each observation)
@@ -64,17 +64,17 @@ ebird_habitat <- inner_join(ebird, habitat, by = c("locality_id", "year"))
 # prediction surface - this is a regular grid of landcover type/elevation (our
 # habitat covariates) that we can use to make predictions for the whole prediction region
 # NOTE: this is NOT the same thing as the habitat covariate data seen
-pred_surface <- read_csv(file.path(data_folder, "landcover_and_elevation_prediction.csv"))
+pred_surface <- read_csv(file.path(data_folder, "input data", "landcover_and_elevation_prediction.csv"))
 
 # latest year of landcover data available 
 max_lc_year <- pred_surface$year[1]
 
 # This is a raster file defining the prediction area (uses the same crs/grid as 
 # the rest of the prediction surface data)
-r <- raster(file.path(data_folder, "prediction-surface.tif"))
+r <- raster(file.path(data_folder, "input data", "prediction-surface.tif"))
 
 # load gis data for making maps (land boundary and possibly country lines)
-ne_land <- read_sf(file.path(data_folder, "gis-data.gpkg"), "ne_land") %>% 
+ne_land <- read_sf(file.path(data_folder, "input data", "gis-data.gpkg"), "ne_land") %>% 
   st_geometry()
 #ne_country_lines <- read_sf(file.path(data_folder, "gis-data.gpkg"), "ne_country_lines") %>% 
   #st_geometry()
@@ -126,13 +126,6 @@ ebird_split <- ebird_ss %>%
          # Keep relevant habitat covariates
          habitat_covariates) 
 
-# Split the dataset randomly into train/test splits
-ebird_split <- ebird_split %>% 
-  split(if_else(runif(nrow(.)) <= train_prop, "train", "test"))
-
-# Print the number of entries in each dataset
-map_int(ebird_split, nrow)
-
 #### end ####
 
 
@@ -142,10 +135,10 @@ map_int(ebird_split, nrow)
 # counts registered (one including 0's and one not)
 
 # Plot hists side by side 
+png(file = file.path(data_folder, "analytics", "count_distributions.png"))
 p <- par(mfrow = c(1, 2))
 
 # counts with zeros
-png(file = file.path(data_folder, "analytics", "count_distributions.png"))
 hist(ebird_ss$observation_count, main = "Histogram of counts", 
      xlab = "Observed count")
 
@@ -175,7 +168,7 @@ dev.off()
 # it to be cyclic (0 hours should be mapped to midnight = 24). 
 
 # select continuous predictors (remove response and time start)
-continuous_covs <- ebird_split$train %>% 
+continuous_covs <- ebird_split %>% 
   select(-observation_count, -protocol_type, -time_observations_started) %>% 
   names()
 
@@ -231,17 +224,6 @@ m_nb <- gam(gam_formula,
 
 
 #### Model Comparison and Selection ####
-
-# Now that we have our model, we need to make predictions using it with
-# the hold-out test data. 
-
-# Extract the actual observed counts from test data
-obs_count <- select(ebird_split$test, obs = observation_count)
-
-# Get predictions for Negative Binomial
-m_nb_pred <- predict(m_nb, ebird_split$test, type = "response") %>% 
-  tibble(family = "Negative Binomial", pred = .) %>% 
-  bind_cols(obs_count)
 
 # It is recommended for us to check how the observed count predictions vary with
 # each covariate - if the relationship is 'too wiggly' to be biologically realistic
@@ -335,7 +317,7 @@ ggplot(pred_tod) +
   geom_vline(xintercept = t_peak, color = "blue", linetype = "dashed") +
   labs(x = "Hours since midnight",
        y = "Predicted relative abundance",
-       title = "Effect of observation start time on Great Hornbill reporting",
+       title = paste("Effect of observation start time on", species_name, "reporting"),
        subtitle = "Peak detectability shown as dashed blue line")
   dev.off()
 
@@ -395,11 +377,13 @@ writeRaster(r_pred[["abd_se"]],
 r_pred_proj <- projectRaster(r_pred, crs = 4326, method = "ngb")
 
 # Plot the data for each layer (abd and abd_se)
+png(file = file.path(data_folder, "analytics", "abundance_maps.png"))
+par(mfrow=c(1,2))
 for (nm in names(r_pred)) {
   r_plot <- r_pred_proj[[nm]]
   
   # Set the plot area and add GIS components
-  par(mar = c(3.5, 0.25, 0.25, 0.25))
+  par(mar = c(4.5, 0.25, 0.25, 0.25))
   plot(ne_land, col = "#dddddd", border = "#888888", lwd = 0.5)
   
   # Modified plasma (colour) palette
@@ -409,7 +393,7 @@ for (nm in names(r_pred)) {
   
   # Setup plot characetristics depending on whether abd or abd_se
   if (nm == "abd") {
-    title <- paste(species_name, " Relative Abundance")
+    title <- paste(species_name, "Relative Abundance")
     # set very low values to zero
     r_plot[r_plot <= zero_threshold] <- NA
     # log transform
@@ -421,7 +405,7 @@ for (nm in names(r_pred)) {
     lbl_brks <- sort(c(-2:2, mn, mx))
     lbls <- round(10^lbl_brks, 2)
   } else {
-    title <- paste(species_name, " Abundance Uncertainty (SE)")
+    title <- paste(species_name, "Abundance Uncertainty (SE)")
     # breaks and legend
     mx <- ceiling(1000 * cellStats(r_plot, max)) / 1000
     mn <- floor(1000 * cellStats(r_plot, min)) / 1000
@@ -454,5 +438,6 @@ for (nm in names(r_pred)) {
                                 side = 3, col = "black",
                                 cex = 1, line = 0))
 }
+dev.off()
 
 #### end ####
