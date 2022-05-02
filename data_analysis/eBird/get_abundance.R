@@ -1,14 +1,15 @@
-# Recreates the abundance map given by the eBird guide at:
-# https://cornelllabofornithology.github.io/ebird-best-practices/abundance.html
+# Hamish Campbell
+
+#> Creates abundance maps such as those given by the eBird guide at:
+#> https://cornelllabofornithology.github.io/ebird-best-practices/abundance.html
 
 # Core Processes:
 #> 1. Data Prep/Loading
 #> 2. Spatiotemporal Subsampling
-#> 3. Test-Train Split/Data Clean
-#> 4. Exploratory Data Analysis
-#> 5. Abundance Models (GAMs)
-#> 6. Model Comparison and Selection
-#> 7. Abundance Prediction Mapping
+#> 3. Exploratory Data Analysis
+#> 4. Abundance Model (GAM)
+#> 5. Model Critique
+#> 6. Abundance Prediction Mapping
 
 # Need to ensure that we have the correct packages installed 
 library(lubridate)
@@ -115,20 +116,6 @@ ebird_ss <- checklist_cell %>%
 #### end ####
 
 
-#### Test-Train Split/Data Clean ####
-
-# Keep only columns used for analysis 
-ebird_split <- ebird_ss %>% 
-  select(observation_count,
-         # Keep columns used to estimate 'effort' of detection
-         day_of_year, time_observations_started, duration_minutes,
-         effort_distance_km, number_observers, protocol_type,
-         # Keep relevant habitat covariates
-         habitat_covariates) 
-
-#### end ####
-
-
 #### Exploratory Data Analysis ####
 # Plotting distributions of data indicates which distributions may be appropriate 
 # for modeling the counts of this species. We will plot histograms of numbers of 
@@ -151,7 +138,7 @@ dev.off()
 #### end ####
 
 
-#### Abundance Models (GAMs) ####
+#### Abundance Model (GAM) ####
 
 # Note: This code is built such that only the selected covariates from the previous
 # section are used and it is not hard coded so changes to these for another species
@@ -166,6 +153,15 @@ dev.off()
 #
 # Note: we treat the 'start time' covariate differently to the others since we want
 # it to be cyclic (0 hours should be mapped to midnight = 24). 
+
+# Keep only columns used for analysis 
+ebird_split <- ebird_ss %>% 
+  select(observation_count,
+         # Keep columns used to estimate 'effort' of detection
+         day_of_year, time_observations_started, duration_minutes,
+         effort_distance_km, number_observers, protocol_type,
+         # Keep relevant habitat covariates (chosen in config)
+         habitat_covariates) 
 
 # select continuous predictors (remove response and time start)
 continuous_covs <- ebird_split %>% 
@@ -223,7 +219,7 @@ m_nb <- gam(gam_formula,
 #### end ####
 
 
-#### Model Comparison and Selection ####
+#### Model Critique ####
 
 # It is recommended for us to check how the observed count predictions vary with
 # each covariate - if the relationship is 'too wiggly' to be biologically realistic
@@ -280,7 +276,7 @@ pred_model <- m_nb
 # Create a df of covariates that take their mean values, or are 'standard' checklist
 # values but have a range of start times throughout the day
 seq_tod <- seq(0, 24, length.out = 300)
-tod_df <- ebird_split$train %>% 
+tod_df <- ebird_split %>% 
   select(starts_with("pland")) %>% 
   summarize_all(mean, na.rm = TRUE) %>% 
   ungroup() %>% 

@@ -1,7 +1,9 @@
-# Code to download/process/analyse the necessary datasets for getting species abundance maps:
-# https://cornelllabofornithology.github.io/ebird-best-practices/index.html
+# Hamish Campbell 
 
-# NOTE: the readme should be consulted before running this code.
+#> Code to download/process/analyse the necessary datasets for getting species abundance maps:
+#> https://cornelllabofornithology.github.io/ebird-best-practices/index.html
+
+#> NOTE: the readme should be consulted before running this code.
 
 library(sf)
 library(rnaturalearth)
@@ -41,16 +43,13 @@ f_ne <- file.path(data_folder, "output data", "gis-data.gpkg")
 # Delete any existing GIS data
 unlink(f_ne)
 
-# Would 'coastlines' dataset instead be applicable for when considering the whole
-# earth? I think it plots correctly and I think if you take the whole world then the
-# polygons should in essence be the same? 
-
 # Get appropriate land border with lakes removed
 if(country_choice != ""){  
   ne_land <- ne_download(scale = 50, category = "cultural",
                          type = "admin_0_countries_lakes",
                          returnclass = "sf") %>%
-    filter(ISO_A2 == country_choice) %>%
+    filter(SOVEREIGNT == "India") %>%
+    #filter(ISO_A2 == country_choice) %>%
     st_set_precision(1e6) %>%
     st_union()
   
