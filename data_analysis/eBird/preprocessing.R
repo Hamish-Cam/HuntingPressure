@@ -48,7 +48,6 @@ if(country_choice != ""){
   ne_land <- ne_download(scale = 50, category = "cultural",
                          type = "admin_0_countries_lakes",
                          returnclass = "sf") %>%
-    #filter(SOVEREIGNT == "India") %>%
     filter(ISO_A2 == country_choice) %>%
     st_set_precision(1e6) %>%
     st_union()
@@ -79,7 +78,7 @@ if(country_choice != ""){
 #### GIS Analysis ####
 
 # Plot the GIS data on a map
-png(file = file.path(data_folder, "analytics", "area_of_interest.png"))
+pdf(file = file.path(data_folder, "analytics", "area_of_interest.pdf"))
 plot(ne_land, axes = TRUE)
 
 if(country_choice == ""){
@@ -104,8 +103,6 @@ if(country_choice != ""){
     auk_species(species_name_scientific) %>%
     # Restrict checklists to just the country that the user has specified 
     auk_country(country_choice) %>%
-    # Only keep data collected after 2010 and before 2022 (means don't need up to date sampling data)
-    #auk_date(date = c("2010-01-01", "2021-12-31")) %>%
     # restrict to the standard traveling and stationary count protocols
     auk_protocol(protocol = c("Stationary", "Traveling")) %>% 
     auk_complete()
@@ -113,8 +110,6 @@ if(country_choice != ""){
   ebd_filters <- ebd %>% 
     # Restrict species to just that of interest
     auk_species(species_name_scientific) %>%
-    # Only keep data collected after 2010 and before 2022
-    #auk_date(date = c("2010-01-01", "2021-12-31")) %>%
     # restrict to the standard traveling and stationary count protocols
     auk_protocol(protocol = c("Stationary", "Traveling")) %>% 
     auk_complete()
@@ -204,7 +199,7 @@ ebird_sf <- ebird %>%
   select(species_observed)
 
 # Set up a plot area and plot data/GIS
-png(file = file.path(data_folder, "analytics", "eBird_checklists_map.png"))
+pdf(file = file.path(data_folder, "analytics", "eBird_checklists_map.pdf"))
 plot(ne_land, col = "#dddddd", lwd = 0.5)
 
 # eBird observations - colour black as not-observed and green as observed
@@ -244,7 +239,7 @@ ebird_tod <- ebird %>%
             det_freq = mean(species_observed))
 
 # histogram
-png(file = file.path(data_folder, "analytics", "effort_time-of-day.png"))
+pdf(file = file.path(data_folder, "analytics", "effort_time-of-day.pdf"))
 g_tod_hist <- ggplot(ebird_tod) +
   aes(x = tod_bins, y = n_checklists) +
   geom_segment(aes(xend = tod_bins, y = 0, yend = n_checklists),
@@ -288,7 +283,7 @@ ebird_dur <- ebird %>%
             det_freq = mean(species_observed))
 
 # histogram
-png(file = file.path(data_folder, "analytics", "effort_duration.png"))
+pdf(file = file.path(data_folder, "analytics", "effort_duration.pdf"))
 g_dur_hist <- ggplot(ebird_dur) +
   aes(x = dur_bins, y = n_checklists) +
   geom_segment(aes(xend = dur_bins, y = 0, yend = n_checklists),
@@ -332,7 +327,7 @@ ebird_dist <- ebird %>%
             det_freq = mean(species_observed))
 
 # histogram
-png(file = file.path(data_folder, "analytics", "effort_distance-travelled.png"))
+pdf(file = file.path(data_folder, "analytics", "effort_distance-travelled.pdf"))
 g_dist_hist <- ggplot(ebird_dist) +
   aes(x = dist_bins, y = n_checklists) +
   geom_segment(aes(xend = dist_bins, y = 0, yend = n_checklists),
@@ -379,7 +374,7 @@ ebird_obs <- ebird %>%
             det_freq = mean(species_observed))
 
 # histogram
-png(file = file.path(data_folder, "analytics", "effort_number-of-observers.png"))
+pdf(file = file.path(data_folder, "analytics", "effort_number-of-observers.pdf"))
 g_obs_hist <- ggplot(ebird_obs) +
   aes(x = obs_bins, y = n_checklists) +
   geom_segment(aes(xend = obs_bins, y = 0, yend = n_checklists),
@@ -643,7 +638,7 @@ urban_cover <- pland_coords %>%
 par(mar = c(0.25, 0.25, 3, 0.25))
 t <- str_glue("Proportion of Urban Coverage\n",
               "{max_lc_year} MODIS Landcover")
-png(file = file.path(data_folder, "analytics", "urban_coverage_map.png"))
+pdf(file = file.path(data_folder, "analytics", "urban_coverage_map.pdf"))
 plot(urban_cover, axes = FALSE, box = FALSE, col = viridis(10), main = t)
 dev.off()
 
@@ -716,7 +711,7 @@ med_elev <- pland_elev_pred %>%
 # make a map
 par(mar = c(0.25, 0.25, 3, 0.25))
 t <- str_glue("Median Elevation Values")
-png(file = file.path(data_folder, "analytics", "elevation_map.png"))
+pdf(file = file.path(data_folder, "analytics", "elevation_map.pdf"))
 plot(med_elev, axes = FALSE, box = FALSE, col = plasma(10), main = t)
 dev.off()
 

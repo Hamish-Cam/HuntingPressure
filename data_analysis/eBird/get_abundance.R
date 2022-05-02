@@ -122,7 +122,7 @@ ebird_ss <- checklist_cell %>%
 # counts registered (one including 0's and one not)
 
 # Plot hists side by side 
-png(file = file.path(data_folder, "analytics", "count_distributions.png"))
+pdf(file = file.path(data_folder, "analytics", "count_distributions.pdf"))
 p <- par(mfrow = c(1, 2))
 
 # counts with zeros
@@ -229,7 +229,7 @@ m_nb <- gam(gam_formula,
 plot_gam <- function(m, title = NULL) {
   
   # capture plot
-  png(file = file.path(data_folder, "analytics", "model_covariates_dependency.png"))
+  pdf(file = file.path(data_folder, "analytics", "model_covariates_dependency.pdf"))
   p <- plot(m, pages = 1)
   
   # extract data
@@ -304,7 +304,7 @@ pred_tod <- predict(pred_model, newdata = tod_df,
 t_peak <- pred_tod$time_observations_started[which.max(pred_tod$pred_lcl)]
 
 # Plot these predicted abundance values and conf interval to visualise 
-png(file = file.path(data_folder, "analytics", "optimal_time_of_day.png"))
+pdf(file = file.path(data_folder, "analytics", "optimal_time_of_day.pdf"))
 ggplot(pred_tod) +
   aes(x = time_observations_started, y = pred,
       ymin = pred_lcl, ymax = pred_ucl) +
@@ -373,7 +373,7 @@ writeRaster(r_pred[["abd_se"]],
 r_pred_proj <- projectRaster(r_pred, crs = 4326, method = "ngb")
 
 # Plot the data for each layer (abd and abd_se)
-png(file = file.path(data_folder, "analytics", "abundance_maps.png"))
+pdf(file = file.path(data_folder, "analytics", "abundance_maps.pdf"))
 par(mfrow=c(1,2))
 for (nm in names(r_pred)) {
   r_plot <- r_pred_proj[[nm]]
