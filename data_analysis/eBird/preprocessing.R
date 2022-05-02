@@ -48,8 +48,8 @@ if(country_choice != ""){
   ne_land <- ne_download(scale = 50, category = "cultural",
                          type = "admin_0_countries_lakes",
                          returnclass = "sf") %>%
-    filter(SOVEREIGNT == "India") %>%
-    #filter(ISO_A2 == country_choice) %>%
+    #filter(SOVEREIGNT == "India") %>%
+    filter(ISO_A2 == country_choice) %>%
     st_set_precision(1e6) %>%
     st_union()
   
@@ -105,7 +105,7 @@ if(country_choice != ""){
     # Restrict checklists to just the country that the user has specified 
     auk_country(country_choice) %>%
     # Only keep data collected after 2010 and before 2022 (means don't need up to date sampling data)
-    auk_date(date = c("2010-01-01", "2021-12-31")) %>%
+    #auk_date(date = c("2010-01-01", "2021-12-31")) %>%
     # restrict to the standard traveling and stationary count protocols
     auk_protocol(protocol = c("Stationary", "Traveling")) %>% 
     auk_complete()
@@ -114,7 +114,7 @@ if(country_choice != ""){
     # Restrict species to just that of interest
     auk_species(species_name_scientific) %>%
     # Only keep data collected after 2010 and before 2022
-    auk_date(date = c("2010-01-01", "2021-12-31")) %>%
+    #auk_date(date = c("2010-01-01", "2021-12-31")) %>%
     # restrict to the standard traveling and stationary count protocols
     auk_protocol(protocol = c("Stationary", "Traveling")) %>% 
     auk_complete()
