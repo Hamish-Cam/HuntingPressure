@@ -429,7 +429,7 @@ MODISoptions(check_earthdata_login = TRUE)
 
 # Download tiles for area of interest and combine into a single raster for each year
 # then save into subfolder 'modis'
-if (!dir.exists("modis")) {
+if (!dir.exists(file.path(data_folder, "modis"))) {
   tifs <- runGdal(product = "MCD12Q1", collection = "006", SDSstring = "01", 
                   extent = gis_land %>% st_buffer(dist = 10000), 
                   begin = begin_year, end = end_year, 
