@@ -3,7 +3,7 @@ The *get_abundance.R* code is written in the R language and is designed such tha
 
 Following the steps outlined here, after having completed the preprocessing steps, will result in a relative abundance map for the users species of choice. In addition, various plots are generated to help the user visualise the characteristics for their specific species of interest. 
 
-The *get_abundance.R* script is the main code for preprocessing the data and should not need to be altered by the user (unless the model behaviour or characteristics of a given species are very different to most). The *abun_config.R* script contains variables that the user should alter depending on the experiments they wish to carry out. 
+The *get_abundance.R* script is the main code for preprocessing the data and should not need to be altered by the user (unless the model behaviour or characteristics of a given species are very different to most). The *config.R* script contains variables that the user should alter depending on the experiments they wish to carry out. 
 
 
 # Required Data
