@@ -90,3 +90,4 @@ io/
 
 # History files
 .history
+.Rproj.user
