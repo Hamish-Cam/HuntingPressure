@@ -199,7 +199,7 @@ ebird_sf <- ebird %>%
   select(species_observed)
 
 # Set up a plot area and plot data/GIS
-pdf(file = file.path(data_folder, "analytics", "eBird_checklists_map.pdf"))
+png(file = file.path(data_folder, "analytics", "eBird_checklists_map.png"))
 plot(ne_land, col = "#dddddd", lwd = 0.5)
 
 # eBird observations - colour black as not-observed and green as observed
