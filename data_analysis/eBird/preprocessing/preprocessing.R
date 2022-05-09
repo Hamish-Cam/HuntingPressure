@@ -748,23 +748,29 @@ ebird_buff_noyear <- ebird %>%
   st_transform(crs = projection(threats_birds_rast)) %>% 
   st_buffer(dist = neighborhood_radius)
 
-# Extract pressure values within neighbourhoods to calculate mean value
+# Extract pressure values within neighbourhoods to calculate weighted mean value (based on proportions)
 locs <- st_set_geometry(ebird_buff_noyear, NULL) %>% 
   mutate(id = row_number())
-pressure_checklists <- exact_extract(threats_birds_rast, ebird_buff_noyear, progress = FALSE) %>% 
-  map_dfr(~ tibble(hunting_mean = mean(.$"B5_1", na.rm = TRUE),
-                   invasives_mean = mean(.$"B8_1", na.rm = TRUE),
-                   pollution_mean = mean(.$"B9", na.rm = TRUE),
-                   climate_mean = mean(.$"B11", na.rm = TRUE))) %>% 
+pressure_checklists <- exact_extract(threats_birds_rast, ebird_buff_noyear, progress = TRUE, 'mean') %>% 
+  # rename the columns
+  rename(
+    hunting_mean = mean.B5_1,
+    invasives_mean = mean.B8_1,
+    pollution_mean = mean.B9,
+    climate_mean = mean.B11
+  ) %>%
   # join to lookup table to get locality_id
-  bind_cols(locs, .)
+  bind_cols(locs, .) 
 
-# Extract and calculate mean value for prediction surface also
-pressure_pred <- exact_extract(threats_birds_rast, r_cells, progress = FALSE) %>% 
-  map_dfr(~ tibble(hunting_mean = mean(.$"B5_1", na.rm = TRUE),
-                   invasives_mean = mean(.$"B8_1", na.rm = TRUE),
-                   pollution_mean = mean(.$"B9", na.rm = TRUE),
-                   climate_mean = mean(.$"B11", na.rm = TRUE))) %>% 
+# Extract and calculate weighted mean value for prediction surface also
+pressure_pred <- exact_extract(threats_birds_rast, r_cells, progress = TRUE, 'mean') %>% 
+  # rename the columns 
+  rename(
+    hunting_mean = mean.B5_1,
+    invasives_mean = mean.B8_1,
+    pollution_mean = mean.B9,
+    climate_mean = mean.B11
+  ) %>% 
   # join to lookup table to get locality_id
   bind_cols(st_drop_geometry(r_cells), .)
 
