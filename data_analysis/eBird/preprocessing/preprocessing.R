@@ -16,6 +16,7 @@ library(tidyverse)
 library(auk)
 library(lubridate)
 library(gridExtra)
+library(stars)
 
 # resolve namespace conflicts
 select <- dplyr::select
@@ -681,13 +682,11 @@ elev_pred <- exact_extract(elev, r_cells, progress = FALSE) %>%
   # join to lookup table to get locality_id
   bind_cols(st_drop_geometry(r_cells), .)
 
-# Join the PLAND and elevation covariates for eBird data and save table as a CSV
+# Join the PLAND and elevation covariates for eBird data 
 pland_elev_checklist <- inner_join(pland, elev_checklists, by = "locality_id")
-write_csv(pland_elev_checklist, file.path(data_folder, "output data", "landcover_and_elevation_checklists.csv"))
 
-# Join the PLAND and elevation covariates for prediction surface and save table as a CSV
+# Join the PLAND and elevation covariates for prediction surface 
 pland_elev_pred <- inner_join(pland_coords, elev_pred, by = "id")
-write_csv(pland_elev_pred, file.path(data_folder, "output data", "landcover_and_elevation_prediction.csv"))
 
 #### end ####
 
@@ -717,6 +716,140 @@ dev.off()
 
 #### end ####
 
+
+#### Pressure Maps ####
+
+# Maps created by: https://www.nature.com/articles/s41559-021-01542-9
+# We are only interested in the non-habit covariates, so can disregard logging 
+# and agriculture 
+
+# Load the threat data and keep only non-habitat threats for birds
+threats <- st_read(file.path(data_folder, "input data", "Grid_mammal_amph_threat_predictions.shp"))
+threats_birds <- select(threats, c("B5_1","B8_1","B9","B11","geometry"))
+
+# Convert the data to a raster so can treat the same way as the elevation data
+threats_birds_rast <- st_rasterize(threats_birds) %>%
+                      as("Raster")
+
+# Buffer and crop data to prediction region (100km this time since 50km res)
+threats_birds_rast <- gis_land %>% 
+  st_buffer(dist = 100000) %>% 
+  st_transform(crs = projection(threats_birds_rast)) %>% 
+  crop(threats_birds_rast, .) %>% 
+  projectRaster(crs = projection(landcover))
+
+# Replace any NaN values with zero so we have valid data throughout region
+threats_birds_rast[is.na(threats_birds_rast[])] <- 0 
+
+# Create neighbourhood area around each checklist location
+ebird_buff_noyear <- ebird %>% 
+  distinct(locality_id, latitude, longitude) %>% 
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
+  st_transform(crs = projection(threats_birds_rast)) %>% 
+  st_buffer(dist = neighborhood_radius)
+
+# Extract pressure values within neighbourhoods to calculate mean value
+locs <- st_set_geometry(ebird_buff_noyear, NULL) %>% 
+  mutate(id = row_number())
+pressure_checklists <- exact_extract(threats_birds_rast, ebird_buff_noyear, progress = FALSE) %>% 
+  map_dfr(~ tibble(hunting_mean = mean(.$"B5_1", na.rm = TRUE),
+                   invasives_mean = mean(.$"B8_1", na.rm = TRUE),
+                   pollution_mean = mean(.$"B9", na.rm = TRUE),
+                   climate_mean = mean(.$"B11", na.rm = TRUE))) %>% 
+  # join to lookup table to get locality_id
+  bind_cols(locs, .)
+
+# Extract and calculate mean value for prediction surface also
+pressure_pred <- exact_extract(threats_birds_rast, r_cells, progress = FALSE) %>% 
+  map_dfr(~ tibble(hunting_mean = mean(.$"B5_1", na.rm = TRUE),
+                   invasives_mean = mean(.$"B8_1", na.rm = TRUE),
+                   pollution_mean = mean(.$"B9", na.rm = TRUE),
+                   climate_mean = mean(.$"B11", na.rm = TRUE))) %>% 
+  # join to lookup table to get locality_id
+  bind_cols(st_drop_geometry(r_cells), .)
+
+# Join the PLAND and elevation covariates, with the pressure data
+pland_elev_pressure_checklist <- inner_join(pland_elev_checklist, pressure_checklists, by = "locality_id")
+write_csv(pland_elev_pressure_checklist, file.path(data_folder, "output data", "landcover_elevation_and_pressure_checklists.csv"))
+
+# Join the PLAND and elevation covariates, for prediction surface, with pressure data
+pland_elev_pressure_pred <- inner_join(pland_elev_pred, pressure_pred, by = "id")
+write_csv(pland_elev_pressure_pred, file.path(data_folder, "output data", "landcover_elevation_and_pressure_prediction.csv"))
+
+
+#### end ####
+
+#### Pressure Maps Analysis ####
+
+# Save a plot of hunting for whole world as illustration
+setEPS()
+postscript(file.path(data_folder, "analytics", "hunting_whole_world.eps"))
+plot(threats_birds["B5_1"], border = 'transparent', 
+     pal=plasma, nbreaks=8, key.pos=4, main=NULL, key.length=lcm(8))
+dev.off()
+
+# Also save a plot of each threat within the range polygon
+## Hunting
+mean_hunting_pressure <- pland_elev_pressure_pred %>% 
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
+  st_transform(crs = projection(r)) %>% 
+  rasterize(r, field = "hunting_mean") %>% 
+  projectRaster(crs = st_crs(4326)$proj4string, method = "ngb") %>%
+  trim()
+
+# Plot and save the map
+par(mar = c(0.25, 0.25, 3, 0.25))
+t <- str_glue("Mean Hunting Pressure")
+pdf(file = file.path(data_folder, "analytics", "pressure_hunting.pdf"))
+plot(mean_hunting_pressure, axes = FALSE, box = FALSE, col = plasma(10), main = t)
+dev.off()
+
+## Invasives
+mean_invasive_pressure <- pland_elev_pressure_pred %>% 
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
+  st_transform(crs = projection(r)) %>% 
+  rasterize(r, field = "invasives_mean") %>% 
+  projectRaster(crs = st_crs(4326)$proj4string, method = "ngb") %>%
+  trim()
+
+# Plot and save the map
+par(mar = c(0.25, 0.25, 3, 0.25))
+t <- str_glue("Mean Invasives Pressure")
+pdf(file = file.path(data_folder, "analytics", "pressure_invasives.pdf"))
+plot(mean_invasive_pressure, axes = FALSE, box = FALSE, col = plasma(10), main = t)
+dev.off()
+
+## Pollution
+mean_pollution_pressure <- pland_elev_pressure_pred %>% 
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
+  st_transform(crs = projection(r)) %>% 
+  rasterize(r, field = "pollution_mean") %>% 
+  projectRaster(crs = st_crs(4326)$proj4string, method = "ngb") %>%
+  trim()
+
+# Plot and save the map
+par(mar = c(0.25, 0.25, 3, 0.25))
+t <- str_glue("Mean Pollution Pressure")
+pdf(file = file.path(data_folder, "analytics", "pressure_pollution.pdf"))
+plot(mean_pollution_pressure, axes = FALSE, box = FALSE, col = plasma(10), main = t)
+dev.off()
+
+## Climate Change
+mean_climate_pressure <- pland_elev_pressure_pred %>% 
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
+  st_transform(crs = projection(r)) %>% 
+  rasterize(r, field = "climate_mean") %>% 
+  projectRaster(crs = st_crs(4326)$proj4string, method = "ngb") %>%
+  trim()
+
+# Plot and save the map
+par(mar = c(0.25, 0.25, 3, 0.25))
+t <- str_glue("Mean Climate Change Pressure")
+pdf(file = file.path(data_folder, "analytics", "pressure_climate.pdf"))
+plot(mean_climate_pressure, axes = FALSE, box = FALSE, col = plasma(10), main = t)
+dev.off()
+
+#### end ####
 
 # Finally, clean up the directory 
 unlink(file.path(data_folder, "ebd_filtered_output.txt"))
