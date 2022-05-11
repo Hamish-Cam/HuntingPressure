@@ -28,4 +28,7 @@ perm_files_location <- "~"
 # Name of downloaded sampling data file 
 sampling_data <- "ebd_sampling_relFeb-2022.txt"
 
+# Name of downloaded threats shape file
+threat_data <- "Grid_mammal_amph_threat_predictions.shp"
+
 ################ end ######################

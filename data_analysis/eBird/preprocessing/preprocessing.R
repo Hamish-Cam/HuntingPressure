@@ -721,10 +721,10 @@ dev.off()
 
 # Maps created by: https://www.nature.com/articles/s41559-021-01542-9
 # We are only interested in the non-habit covariates, so can disregard logging 
-# and agriculture 
+# and agriculture. Note: 'threats' and 'pressure' used interchangeably
 
 # Load the threat data and keep only non-habitat threats for birds
-threats <- st_read(file.path(data_folder, "input data", "Grid_mammal_amph_threat_predictions.shp"))
+threats <- st_read(file.path(data_folder, "input data", threat_data))
 threats_birds <- select(threats, c("B5_1","B8_1","B9","B11","geometry"))
 
 # Convert the data to a raster so can treat the same way as the elevation data
@@ -749,6 +749,7 @@ ebird_buff_noyear <- ebird %>%
   st_buffer(dist = neighborhood_radius)
 
 # Extract pressure values within neighbourhoods to calculate weighted mean value (based on proportions)
+# (this is different to the basic mean used for elevation data)
 locs <- st_set_geometry(ebird_buff_noyear, NULL) %>% 
   mutate(id = row_number())
 pressure_checklists <- exact_extract(threats_birds_rast, ebird_buff_noyear, progress = TRUE, 'mean') %>% 
