@@ -9,10 +9,11 @@ The *preprocessing.R* script is the main code for preprocessing the data and sho
 
 
 # Data Download
-The preprocessing code requires manual download of 3 datasets prior to running the program. Two of these datasets are from [eBird](https://ebird.org/home) and require an approved account to access the data. Once an account has been approved, follow the 3 steps outlined below:
+The preprocessing code requires manual download of 4 datasets prior to running the program. Two of these datasets are from [eBird](https://ebird.org/home) and require an approved account to access the data. Once an account has been approved, follow the 4 steps outlined below:
 1. [eBird Basic Dataset (EBD)](https://ebird.org/data/download) - Sampling event data (required for obtaining presence/absence data)
 2. [eBird Basic Dataset (EBD)](https://ebird.org/data/download) - Checklist data (custom download). The species of interest should be selected, but all other filters left blank
 3. [EarthEnv Elevation Dataset](http://www.earthenv.org/topography) - Derived topographic continuous variables (elevation, median, GMTED2010, 1km)
+4. [Harfoot et al. Threat Maps](https://universityofcambridgecloud-my.sharepoint.com/:f:/g/personal/hrac2_cam_ac_uk/EhSiZqRC0k1NnWrrQyaMsQ0BPbfsyzbyqT8I43bKJjDjsA?e=DOlh7j) - Pressure maps of 6 major threats as defined by the IUCN Red List: agriculture, logging, hunting, invasives, pollution and climate change (whole world, 50km resolution)
 
 # JASMIN Setup 
 These steps assume that the user already: 
@@ -33,11 +34,11 @@ MODISoptions(check_earthdata_login = TRUE)`
 
 
 ## Directory Setup
-Once the relevant datasets have been downloaded (info above), along with the *preprocessing.R*/*config.R* scripts, and transferred onto the JASMIN servers, the correct directory structure must be setup (naming convention must match those stated below): 
+Once the relevant datasets have been downloaded (info above), along with the *preprocessing.R* / *config.R* scripts, and transferred onto the JASMIN servers, the correct directory structure must be setup (naming convention must match those stated below): 
 1. Place the eBird sampling data and elevation data into your home directory (use `cd ~` to find where this is)
-2. Make a project folder where for the *preprocessing.R* and *config.R* files to live in
+2. Make a project folder for the *preprocessing.R* and *config.R* files to live in
 3. Within the project folder, create a *data-SpeciesName* folder
-4. Within the data folder, create a folder named *input data* and place the eBird checklist data within this folder
+4. Within the data folder, create a folder named *input data* and place the eBird checklist data and threat map shape files within this folder
 
 In summary, the directory structure should be as follows:
 
@@ -47,15 +48,18 @@ In summary, the directory structure should be as follows:
         
     project folder
         -> data-<species name> folder
+            -> preprocessing.R
+            -> config.R
             -> input data folder
                 -> eBird checklist data
+                -> threat map shape files
 
 # Expected Output
 After a run has been completed (see below), the following outputs will be generated and placed in the *output data* subfolder: 
-1. GIS area of interest (AOI data: `gis-data.gpkg`
+1. GIS area of interest (AOI) data: `gis-data.gpkg`
 2. eBird processed output data: `ebd_processed_output.csv`
-3. Landcover and elevation data at checklist locations: `landcover_and_elevation_checklists.csv`
-4. Landcover and elevation data at all locations on prediction surface (evenly spaced points across AOI): `landcover_and_elevation_prediction.csv`
+3. Landcover and elevation data at checklist locations: `landcover_elevation_and_pressure_checklists.csv`
+4. Landcover and elevation data at all locations on prediction surface (evenly spaced points across AOI): `landcover_elevation-and_pressure_prediction.csv`
 5. Raster file defining all points on prediction surface geographically: `prediction-surface.tif`
 
 In addition, various plots are generated to give the user insight into the characteristics of each of the datasets being processed. These plots are placed in the *analytics* folder. The following plots are generated: 
@@ -64,6 +68,8 @@ In addition, various plots are generated to give the user insight into the chara
 3. Effort covariate insights (x4)
 4. Urban landcover map
 5. Elevation map  
+6. Hunting pressure map (whole world)
+7. Non-habitat pressure maps within AOI (x4)
 
 In summary, the final directory structure will be as follows: 
 
@@ -73,13 +79,16 @@ In summary, the final directory structure will be as follows:
             
     project folder
         -> data-<species name> folder
+            -> preprocessing.R
+            -> config.R
             -> input data folder
                 -> eBird checklist data
+                -> threat map shape files
             -> output data folder 
                 -> gis-data.gpkg
                 -> ebd_processed_output.csv
-                -> landcover_and_elevation_checklists.csv
-                -> landcover_and_elevation_prediction.csv
+                -> landcover_elevation_and_pressure_checklists.csv
+                -> landcover_elevation_and_pressure_prediction.csv
                 -> prediction-surface.tif
             -> analytics folder 
                 -> AOI map
@@ -87,9 +96,8 @@ In summary, the final directory structure will be as follows:
                 -> effort covariate insights (x4)
                 -> urban landcover map
                 -> elevation map
-
-
-
+                -> hunting pressure map (whole world)
+                -> non-habitat pressure maps within AOI (x4)
 
 # Completing a Run
 Once all of the above steps have been completed, the user is ready to start a run. JASMIN users the SLURM system for scheduling jobs - once a job is complete the outputs described above should be available for transfer. An example workflow for submitting a job is given here:
