@@ -26,7 +26,7 @@ These steps assume that the user already:
 The first step is to ensure the necessary R packages are installed on JASMIN: 
  1. Load the jaspy module: `module load jasr`
  2. Start the R command line: `R`
- 3. Install the required packages available on CRAN (choose to install all packages and select a server location close to yours): `install.packages(c("sf","rnaturalearth","dplyr","raster","exactextractr","viridis","tidyverse","auk","lubridate","gridExtra","devtools","stars"))`
+ 3. Install the required packages available on CRAN (choose to install all packages and select a server location close to yours): `install.packages(c("sf","rnaturalearth","dplyr","raster","exactextractr","viridis","tidyverse","auk","lubridate","gridExtra","devtools","stars","ggplot2"))`
  4. Install the MODIS package from Github: `devtools::install_github("MatMatt/MODIS")`
  5. Make a [NASA Earthdata](https://urs.earthdata.nasa.gov/home) account for accessing the MODIS data 
  6. Test your Earthdata credentials (may need 24 hours after account creation):  `MODIS::EarthdataLogin(usr = "username", pwd = "password")
