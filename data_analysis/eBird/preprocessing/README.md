@@ -9,11 +9,12 @@ The *preprocessing.R* script is the main code for preprocessing the data and sho
 
 
 # Data Download
-The preprocessing code requires manual download of 4 datasets prior to running the program. Two of these datasets are from [eBird](https://ebird.org/home) and require an approved account to access the data. Once an account has been approved, follow the 4 steps outlined below:
+The preprocessing code requires manual download of 5 datasets prior to running the program. Two of these datasets are from [eBird](https://ebird.org/home) and require an approved account to access the data. Once an account has been approved, follow the 5 steps outlined below:
 1. [eBird Basic Dataset (EBD)](https://ebird.org/data/download) - Sampling event data (required for obtaining presence/absence data)
 2. [eBird Basic Dataset (EBD)](https://ebird.org/data/download) - Checklist data (custom download). The species of interest should be selected, but all other filters left blank
-3. [EarthEnv Elevation Dataset](http://www.earthenv.org/topography) - Derived topographic continuous variables (elevation, median, GMTED2010, 1km)
-4. [Harfoot et al. Threat Maps](https://universityofcambridgecloud-my.sharepoint.com/:f:/g/personal/hrac2_cam_ac_uk/EhSiZqRC0k1NnWrrQyaMsQ0BPbfsyzbyqT8I43bKJjDjsA?e=DOlh7j) - Pressure maps of 6 major threats as defined by the IUCN Red List: agriculture, logging, hunting, invasives, pollution and climate change (whole world, 50km resolution)
+3. [BirdLife Range Polygons](http://datazone.birdlife.org/species/requestdis) - Range map data for all monitored bird species. Data access has to be requested via email
+4. [EarthEnv Elevation Dataset](http://www.earthenv.org/topography) - Derived topographic continuous variables (elevation, median, GMTED2010, 1km)
+5. [Harfoot et al. Threat Maps](https://universityofcambridgecloud-my.sharepoint.com/:f:/g/personal/hrac2_cam_ac_uk/EhSiZqRC0k1NnWrrQyaMsQ0BPbfsyzbyqT8I43bKJjDjsA?e=DOlh7j) - Pressure maps of 6 major threats as defined by the IUCN Red List: agriculture, logging, hunting, invasives, pollution and climate change (whole world, 50km resolution)
 
 # JASMIN Setup 
 These steps assume that the user already: 
@@ -38,7 +39,7 @@ Once the relevant datasets have been downloaded (info above), along with the *pr
 1. Place the eBird sampling data and elevation data into your home directory (use `cd ~` to find where this is)
 2. Make a project folder for the *preprocessing.R* and *config.R* files to live in
 3. Within the project folder, create a *data-SpeciesName* folder
-4. Within the data folder, create a folder named *input data* and place the eBird checklist data and threat map shape files within this folder
+4. Within the data folder, create a folder named *input data* and place the eBird checklist data, range polygon data and threat map shape files within this folder
 
 In summary, the directory structure should be as follows:
 
@@ -52,6 +53,7 @@ In summary, the directory structure should be as follows:
             -> config.R
             -> input data folder
                 -> eBird checklist data
+                -> range polygons (.gdb folder)
                 -> threat map shape files
 
 # Expected Output
@@ -83,6 +85,7 @@ In summary, the final directory structure will be as follows:
             -> config.R
             -> input data folder
                 -> eBird checklist data
+                -> range polygons (.gdb folder)
                 -> threat map shape files
             -> output data folder 
                 -> gis-data.gpkg
@@ -110,17 +113,17 @@ Once all of the above steps have been completed, the user is ready to start a ru
 ## Example Slurm job script
 
     #!/bin/bash 
-    #SBATCH --partition=test 
+    #SBATCH --partition=short-serial 
     #SBATCH -o %j.out 
     #SBATCH -e %j.err 
-    #SBATCH --time=03:00:00 
-    #SBATCH --mem=3G 
+    #SBATCH --time=07:00:00 
+    #SBATCH --mem=0 
     
     # Must add R to workspace 
     module add jasr 
     
     # Go to relevant folder 
-    cd HuntingPressure/data_analysis/eBird 
+    cd HuntingPressure/data_analysis/eBird/preprocessing
     
     # Execute the job in question 
     Rscript preprocessing.R
