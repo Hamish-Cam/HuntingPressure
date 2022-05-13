@@ -17,6 +17,7 @@ library(auk)
 library(lubridate)
 library(gridExtra)
 library(stars)
+library(ggplot2)
 
 # resolve namespace conflicts
 select <- dplyr::select
@@ -36,7 +37,7 @@ if (!dir.exists(file.path(data_folder, "analytics"))){
 }
 
 
-#### GIS Preprocess ####
+#### Species Range ####
 
 # File to save GIS data 
 f_ne <- file.path(data_folder, "output data", "gis-data.gpkg")
@@ -44,47 +45,54 @@ f_ne <- file.path(data_folder, "output data", "gis-data.gpkg")
 # Delete any existing GIS data
 unlink(f_ne)
 
-# Get appropriate land border with lakes removed
-if(country_choice != ""){  
-  ne_land <- ne_download(scale = 50, category = "cultural",
-                         type = "admin_0_countries_lakes",
-                         returnclass = "sf") %>%
-    filter(ISO_A2 == country_choice) %>%
-    st_set_precision(1e6) %>%
-    st_union()
-  
-  # Output relevant GIS data
-  write_sf(ne_land, f_ne, "ne_land")
-  
-}else{
-  ne_land <- ne_download(scale = 50, category = "cultural",
-                         type = "admin_0_countries_lakes",
-                         returnclass = "sf") %>%
-    st_set_precision(1e6) %>%
-    st_union()
-  
-  # Get country lines for plotting
-  ne_country_lines <- ne_download(scale = 50, category = "cultural",
-                                  type = "admin_0_boundary_lines_land",
-                                  returnclass = "sf") %>% 
-    st_geometry()
-  
-  # Output relevant GIS data
-  write_sf(ne_land, f_ne, "ne_land")
-  write_sf(ne_country_lines, f_ne, "ne_country_lines")
-}
+# Get species range polygon from BirdLife data for species requested in config
+range_query <- paste('SELECT * FROM "All_Species" WHERE sci_name = \'', 
+                     species_name_scientific, '\'', sep='')
+species_range <- st_read(dsn=file.path(getwd(), data_folder, "input data", range_data), query = range_query) %>%
+                    select(Shape)
+
+# Shortcut to load pre-processed range data
+#species_range <- st_read(dsn="~/Desktop/ghb-range.gpkg")
+
+# Add a buffer of 100km around the inexact range polygon to allow for error
+species_range <- st_buffer(species_range, 100000)
+
+# Now get land (Asia) and country boundaries for plotting purposes 
+# Land boundaries 
+ne_land <- ne_download(scale = 50, category = "cultural",
+                       type = "admin_0_countries_lakes",
+                       returnclass = "sf") %>%
+  filter(CONTINENT == "Asia") %>%
+  st_set_precision(1e6) %>%
+  st_union()
+
+# Country boundaries (limit to Asia by intersect command)
+ne_country_lines <- ne_download(scale = 50, category = "cultural",
+                                type = "admin_0_boundary_lines_land",
+                                returnclass = "sf") %>% 
+  st_geometry()
+ne_country_lines <- st_intersects(ne_country_lines, ne_land, sparse = FALSE) %>%
+  as.logical() %>%
+  {ne_country_lines[.]}
+
+# Also now limit the buffered range to keep only sections on land
+species_range <- st_intersection(species_range, ne_land) 
+
+# Output relevant GIS data
+write_sf(ne_land, f_ne, "ne_land")
+write_sf(ne_country_lines, f_ne, "ne_country_lines")
+write_sf(species_range, f_ne, "range")
 
 #### end ####
 
-#### GIS Analysis ####
+#### Species Range Analysis ####
 
-# Plot the GIS data on a map
-pdf(file = file.path(data_folder, "analytics", "area_of_interest.pdf"))
-plot(ne_land, axes = TRUE)
-
-if(country_choice == ""){
-  plot(ne_country_lines, add = TRUE)
-}
+# Plot the land, country boundaries and range, using range bounds to limit axes
+pdf(file = file.path(data_folder, "analytics", "range_map.pdf"))
+plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
+        ylim = st_bbox(species_range)[c(2,4)], main=paste(species_name, "Range Map"))
+plot(ne_country_lines, add=TRUE)
+plot(species_range, add=TRUE, col=alpha("orange",0.7), border='transparent')
 dev.off()
 
 #### end ####
@@ -98,23 +106,14 @@ ebd <- auk_ebd(file.path(getwd(), data_folder, "input data", species_data),
 
 # Define/print the filters to use for the eBird data 
 # (https://cornelllabofornithology.github.io/auk/reference/index.html#section-filter)
-if(country_choice != ""){
-  ebd_filters <- ebd %>% 
-    # Restrict species to just that of interest
-    auk_species(species_name_scientific) %>%
-    # Restrict checklists to just the country that the user has specified 
-    auk_country(country_choice) %>%
-    # restrict to the standard traveling and stationary count protocols
-    auk_protocol(protocol = c("Stationary", "Traveling")) %>% 
-    auk_complete()
-}else{
-  ebd_filters <- ebd %>% 
-    # Restrict species to just that of interest
-    auk_species(species_name_scientific) %>%
-    # restrict to the standard traveling and stationary count protocols
-    auk_protocol(protocol = c("Stationary", "Traveling")) %>% 
-    auk_complete()
-}
+ebd_filters <- ebd %>% 
+  # Restrict checklists to those within smallest bounding box containing range polygons
+  auk_bbox(species_range) %>%
+  # Restrict species to just that of interest
+  auk_species(species_name_scientific) %>%
+  # restrict to the standard traveling and stationary count protocols
+  auk_protocol(protocol = c("Stationary", "Traveling")) %>% 
+  auk_complete()
 ebd_filters
 
 # Define output file names
@@ -128,6 +127,21 @@ if (!file.exists(f_ebd)) {
 
 # Read in the data and zero-fill using sampling info to produce full presence/absence data
 ebd_zf <- auk_zerofill(f_ebd, f_sampling, collapse = TRUE)
+
+# Needed to keep only the eBird checklists within the range polygon
+# Convert to sf object first
+ebd_zf_sf <- ebd_zf %>% 
+  select(longitude, latitude) %>% 
+  st_as_sf( coords = c("longitude", "latitude"), crs = 4326)
+
+# Ensure polygon and eBird data have the same crs
+poly_crop <- st_transform(species_range, crs = st_crs(ebd_zf_sf))
+
+# Identify checklists within range polygon
+in_range <- st_within(ebd_zf_sf, poly_crop, sparse = FALSE)
+
+# Subset the data to get only checklists in range
+ebd_zf <- ebd_zf[in_range[, 1], ]
 
 # Function to convert 'time observation' to hours (0-24)
 time_to_decimal <- function(x) {
@@ -188,11 +202,6 @@ write_csv(ebird, csv_name, na = "")
 #### eBird Analysis ####
 
 # Start by producing a spatial map of all checklists recorded
-
-# Load and project gis data
-ne_land <- read_sf(f_ne, "ne_land") %>% 
-  st_geometry()
-
 # Prepare ebird data for mapping
 ebird_sf <- ebird %>% 
   # convert to spatial points
@@ -200,8 +209,11 @@ ebird_sf <- ebird %>%
   select(species_observed)
 
 # Set up a plot area and plot data/GIS
-png(file = file.path(data_folder, "analytics", "eBird_checklists_map.png"))
-plot(ne_land, col = "#dddddd", lwd = 0.5)
+pdf(file = file.path(data_folder, "analytics", "eBird_checklists_map.pdf"))
+plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
+        ylim = st_bbox(species_range)[c(2,4)], main=paste(species_name, "eBird Observations"))
+plot(ne_country_lines, add=TRUE)
+plot(species_range, add=TRUE, col=alpha("orange",0.7), border='transparent')
 
 # eBird observations - colour black as not-observed and green as observed
 plot(st_geometry(ebird_sf),
@@ -216,8 +228,6 @@ legend("bottomleft", bty = "n",
        col = c("#555555", "#4daf4a"),
        legend = c("eBird checklists", paste(species_name, "sightings")),
        pch = 19)
-box()
-title(paste(species_name, "eBird Observations"))
 dev.off()
 
 
@@ -408,7 +418,7 @@ dev.off()
 #### MODIS Landcover Data ####
 
 # Read the GIS boundary chosen in the previous section
-gis_land <- read_sf(f_ne, "ne_land") %>% 
+gis_land <- read_sf(f_ne, "range") %>% 
   # project to the native modis projection
   st_transform(crs = paste("+proj=sinu +lon_0=0 +x_0=0 +y_0=0",
                            "+a=6371007.181 +b=6371007.181 +units=m +no_defs"))
@@ -625,22 +635,22 @@ urban_cover <- pland_coords %>%
   # convert to spatial features and project onto prediction surface
   st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
   st_transform(crs = projection(r)) %>% 
-  
   # rasterize points
   rasterize(r, field = "pland_13_urban") %>%
-  
   # project to correct crs
   projectRaster(crs = st_crs(4326)$proj4string, method = "ngb") %>%
-  
   # trim off empty edges of raster
   trim()
 
 # make a map
-par(mar = c(0.25, 0.25, 3, 0.25))
-t <- str_glue("Proportion of Urban Coverage\n",
-              "{max_lc_year} MODIS Landcover")
 pdf(file = file.path(data_folder, "analytics", "urban_coverage_map.pdf"))
-plot(urban_cover, axes = FALSE, box = FALSE, col = viridis(10), main = t)
+par(mar = c(3,3,2,5))
+t <- str_glue("Urban Coverage",", MODIS {max_lc_year}")
+plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
+        ylim = st_bbox(species_range)[c(2,4)], main=t)
+plot(ne_country_lines, add=TRUE)
+plot(species_range, add=TRUE, border='black')
+plot(urban_cover, add = TRUE, col = viridis(10))
 dev.off()
 
 #### end ####
@@ -697,21 +707,22 @@ med_elev <- pland_elev_pred %>%
   # convert to spatial features and project onto prediction surface
   st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
   st_transform(crs = projection(r)) %>% 
-  
   # rasterize points
   rasterize(r, field = "elevation_median") %>% 
-  
   # project to correct crs
   projectRaster(crs = st_crs(4326)$proj4string, method = "ngb") %>%
-  
   # trim off empty edges of raster
   trim()
 
 # make a map
-par(mar = c(0.25, 0.25, 3, 0.25))
-t <- str_glue("Median Elevation Values")
 pdf(file = file.path(data_folder, "analytics", "elevation_map.pdf"))
-plot(med_elev, axes = FALSE, box = FALSE, col = plasma(10), main = t)
+par(mar = c(3,3,2,5))
+t <- str_glue("Median Elevation Values")
+plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
+        ylim = st_bbox(species_range)[c(2,4)], main=t)
+plot(ne_country_lines, add=TRUE)
+plot(species_range, add=TRUE, border='black')
+plot(med_elev, add = TRUE, col = plasma(10), main = t)
 dev.off()
 
 #### end ####
@@ -805,10 +816,14 @@ mean_hunting_pressure <- pland_elev_pressure_pred %>%
   trim()
 
 # Plot and save the map
-par(mar = c(0.25, 0.25, 3, 0.25))
-t <- str_glue("Mean Hunting Pressure")
 pdf(file = file.path(data_folder, "analytics", "pressure_hunting.pdf"))
-plot(mean_hunting_pressure, axes = FALSE, box = FALSE, col = plasma(10), main = t)
+par(mar = c(3,3,2,5))
+t <- str_glue("Mean Hunting Pressure")
+plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
+     ylim = st_bbox(species_range)[c(2,4)], main=t)
+plot(ne_country_lines, add=TRUE)
+plot(species_range, add=TRUE, border='black')
+plot(mean_hunting_pressure, add=TRUE, col = viridis(10))
 dev.off()
 
 ## Invasives
@@ -820,10 +835,14 @@ mean_invasive_pressure <- pland_elev_pressure_pred %>%
   trim()
 
 # Plot and save the map
-par(mar = c(0.25, 0.25, 3, 0.25))
-t <- str_glue("Mean Invasives Pressure")
 pdf(file = file.path(data_folder, "analytics", "pressure_invasives.pdf"))
-plot(mean_invasive_pressure, axes = FALSE, box = FALSE, col = plasma(10), main = t)
+par(mar = c(3,3,2,5))
+t <- str_glue("Mean Invasives Pressure")
+plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
+        ylim = st_bbox(species_range)[c(2,4)], main=t)
+plot(ne_country_lines, add=TRUE)
+plot(species_range, add=TRUE, border='black')
+plot(mean_invasive_pressure, add=TRUE, col = viridis(10))
 dev.off()
 
 ## Pollution
@@ -835,10 +854,14 @@ mean_pollution_pressure <- pland_elev_pressure_pred %>%
   trim()
 
 # Plot and save the map
-par(mar = c(0.25, 0.25, 3, 0.25))
-t <- str_glue("Mean Pollution Pressure")
 pdf(file = file.path(data_folder, "analytics", "pressure_pollution.pdf"))
-plot(mean_pollution_pressure, axes = FALSE, box = FALSE, col = plasma(10), main = t)
+par(mar = c(3,3,2,5))
+t <- str_glue("Mean Pollution Pressure")
+plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
+     ylim = st_bbox(species_range)[c(2,4)], main=t)
+plot(ne_country_lines, add=TRUE)
+plot(species_range, add=TRUE, border='black')
+plot(mean_pollution_pressure, add=TRUE, col = viridis(10))
 dev.off()
 
 ## Climate Change
@@ -850,10 +873,14 @@ mean_climate_pressure <- pland_elev_pressure_pred %>%
   trim()
 
 # Plot and save the map
-par(mar = c(0.25, 0.25, 3, 0.25))
-t <- str_glue("Mean Climate Change Pressure")
 pdf(file = file.path(data_folder, "analytics", "pressure_climate.pdf"))
-plot(mean_climate_pressure, axes = FALSE, box = FALSE, col = plasma(10), main = t)
+par(mar = c(3,3,2,5))
+t <- str_glue("Mean Climate Change Pressure")
+plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
+        ylim = st_bbox(species_range)[c(2,4)], main=t)
+plot(ne_country_lines, add=TRUE)
+plot(species_range, add=TRUE, border='black')
+plot(mean_climate_pressure, add=TRUE, col = viridis(10))
 dev.off()
 
 #### end ####
