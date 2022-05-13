@@ -57,16 +57,16 @@ species_range <- st_read(dsn=file.path(getwd(), data_folder, "input data", range
 # Add a buffer of 100km around the inexact range polygon to allow for error
 species_range <- st_buffer(species_range, 100000)
 
-# Now get land (Asia) and country boundaries for plotting purposes 
+# Now get land and country boundaries for plotting purposes 
 # Land boundaries 
 ne_land <- ne_download(scale = 50, category = "cultural",
                        type = "admin_0_countries_lakes",
                        returnclass = "sf") %>%
-  filter(CONTINENT == "Asia") %>%
+  filter(CONTINENT == continent) %>%
   st_set_precision(1e6) %>%
   st_union()
 
-# Country boundaries (limit to Asia by intersect command)
+# Country boundaries (limit to continent by intersect command)
 ne_country_lines <- ne_download(scale = 50, category = "cultural",
                                 type = "admin_0_boundary_lines_land",
                                 returnclass = "sf") %>% 

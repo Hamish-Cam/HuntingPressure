@@ -11,6 +11,9 @@ password = "mQ5taFmenGs9oHS"
 species_name <- "Great Hornbill"            
 species_name_scientific <- "Buceros bicornis"
 
+# Continent of study (not strictly necessary but I am only looking at Asia atm)
+continent <- "Asia"
+
 # Name of the folder that contains input data folder
 data_folder <- "data-ghb"
 
