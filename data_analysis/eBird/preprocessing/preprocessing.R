@@ -45,9 +45,16 @@ f_ne <- file.path(data_folder, "output data", "gis-data.gpkg")
 # Delete any existing GIS data
 unlink(f_ne)
 
+# If studying Large Cuckooshrike need to account for differences in IUCN/BirdLife data
+if(species_name_scientific == 'Coracina macei'){
+    query_species <- 'Coracina javensis'
+}else{
+    query_species <- species_name_scientific
+}
+
 # Get species range polygon from BirdLife data for species requested in config
 range_query <- paste('SELECT * FROM "All_Species" WHERE sci_name = \'', 
-                     species_name_scientific, '\'', sep='')
+                     query_species, '\'', sep='')
 species_range <- st_read(dsn=file.path(getwd(), data_folder, "input data", range_data), query = range_query) %>%
                     select(Shape)
 
