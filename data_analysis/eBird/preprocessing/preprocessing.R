@@ -55,7 +55,7 @@ if(species_name_scientific == 'Coracina macei'){
 # Get species range polygon from BirdLife data for species requested in config
 range_query <- paste('SELECT * FROM "All_Species" WHERE sci_name = \'', 
                      query_species, '\'', sep='')
-species_range <- st_read(dsn=file.path(getwd(), data_folder, "input data", range_data), query = range_query) %>%
+species_range <- st_read(dsn=file.path(perm_files_location, "BOTW.gdb"), query = range_query) %>%
                     select(Shape)
 
 # Shortcut to load pre-processed range data
@@ -742,7 +742,7 @@ dev.off()
 # and agriculture. Note: 'threats' and 'pressure' used interchangeably
 
 # Load the threat data and keep only non-habitat threats for birds
-threats <- st_read(file.path(data_folder, "input data", threat_data))
+threats <- st_read(file.path(perm_files_location, "Grid_mammal_amph_threat_predictions.shp"))
 threats_birds <- select(threats, c("B5_1","B8_1","B9","B11","geometry"))
 
 # Convert the data to a raster so can treat the same way as the elevation data
