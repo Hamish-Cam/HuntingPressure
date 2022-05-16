@@ -36,16 +36,18 @@ MODISoptions(check_earthdata_login = TRUE)`
 
 ## Directory Setup
 Once the relevant datasets have been downloaded (info above), along with the *preprocessing.R* / *config.R* scripts, and transferred onto the JASMIN servers, the correct directory structure must be setup (naming convention must match those stated below): 
-1. Place the eBird sampling data and elevation data into your home directory (use `cd ~` to find where this is)
+1. Place the eBird sampling data, elevation data, range data and pressures data into the permanent files folder (specified in config)
 2. Make a project folder for the *preprocessing.R* and *config.R* files to live in
 3. Within the project folder, create a *data-SpeciesName* folder
-4. Within the data folder, create a folder named *input data* and place the eBird checklist data, range polygon data and threat map shape files within this folder
+4. Within the data folder, create a folder named *input data* and place the eBird checklist data inside
 
 In summary, the directory structure should be as follows:
 
-    home directory
+    perm_files directory
         -> eBird sampling data
         -> elevation data
+        -> range polygons (.gdb folder)
+        -> threat map shape files
         
     project folder
         -> data-<species name> folder
@@ -53,8 +55,6 @@ In summary, the directory structure should be as follows:
             -> config.R
             -> input data folder
                 -> eBird checklist data
-                -> range polygons (.gdb folder)
-                -> threat map shape files
 
 # Expected Output
 After a run has been completed (see below), the following outputs will be generated and placed in the *output data* subfolder: 
@@ -75,9 +75,11 @@ In addition, various plots are generated to give the user insight into the chara
 
 In summary, the final directory structure will be as follows: 
 
-     home directory
+     perm_files directory
             -> eBird sampling data
             -> elevation data
+            -> range polygons (.gdb folder)
+            -> threat map shape files
             
     project folder
         -> data-<species name> folder
@@ -85,8 +87,7 @@ In summary, the final directory structure will be as follows:
             -> config.R
             -> input data folder
                 -> eBird checklist data
-                -> range polygons (.gdb folder)
-                -> threat map shape files
+
             -> output data folder 
                 -> gis-data.gpkg
                 -> ebd_processed_output.csv
