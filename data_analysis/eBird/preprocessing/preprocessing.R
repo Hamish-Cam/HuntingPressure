@@ -98,8 +98,8 @@ write_sf(species_range, f_ne, "range")
 pdf(file = file.path(data_folder, "analytics", "range_map.pdf"))
 plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
         ylim = st_bbox(species_range)[c(2,4)], main=paste(species_name, "Range Map"))
-plot(ne_country_lines, add=TRUE)
 plot(species_range, add=TRUE, col=alpha("orange",0.7), border='transparent')
+plot(ne_country_lines, add=TRUE)
 dev.off()
 
 #### end ####
@@ -219,8 +219,8 @@ ebird_sf <- ebird %>%
 pdf(file = file.path(data_folder, "analytics", "eBird_checklists_map.pdf"))
 plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
         ylim = st_bbox(species_range)[c(2,4)], main=paste(species_name, "eBird Observations"))
-plot(ne_country_lines, add=TRUE)
 plot(species_range, add=TRUE, col=alpha("orange",0.7), border='transparent')
+plot(ne_country_lines, add=TRUE)
 
 # eBird observations - colour black as not-observed and green as observed
 plot(st_geometry(ebird_sf),
@@ -655,9 +655,9 @@ par(mar = c(3,3,2,5))
 t <- str_glue("Urban Coverage",", MODIS {max_lc_year}")
 plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
         ylim = st_bbox(species_range)[c(2,4)], main=t)
-plot(ne_country_lines, add=TRUE)
 plot(species_range, add=TRUE, border='black')
 plot(urban_cover, add = TRUE, col = viridis(10))
+plot(ne_country_lines, add=TRUE)
 dev.off()
 
 #### end ####
@@ -727,9 +727,9 @@ par(mar = c(3,3,2,5))
 t <- str_glue("Median Elevation Values")
 plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
         ylim = st_bbox(species_range)[c(2,4)], main=t)
-plot(ne_country_lines, add=TRUE)
 plot(species_range, add=TRUE, border='black')
 plot(med_elev, add = TRUE, col = plasma(10), main = t)
+plot(ne_country_lines, add=TRUE)
 dev.off()
 
 #### end ####
@@ -828,9 +828,9 @@ par(mar = c(3,3,2,5))
 t <- str_glue("Mean Hunting Pressure")
 plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
      ylim = st_bbox(species_range)[c(2,4)], main=t)
-plot(ne_country_lines, add=TRUE)
 plot(species_range, add=TRUE, border='black')
 plot(mean_hunting_pressure, add=TRUE, col = viridis(10))
+plot(ne_country_lines, add=TRUE)
 dev.off()
 
 ## Invasives
@@ -847,9 +847,9 @@ par(mar = c(3,3,2,5))
 t <- str_glue("Mean Invasives Pressure")
 plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
         ylim = st_bbox(species_range)[c(2,4)], main=t)
-plot(ne_country_lines, add=TRUE)
 plot(species_range, add=TRUE, border='black')
 plot(mean_invasive_pressure, add=TRUE, col = viridis(10))
+plot(ne_country_lines, add=TRUE)
 dev.off()
 
 ## Pollution
@@ -866,9 +866,9 @@ par(mar = c(3,3,2,5))
 t <- str_glue("Mean Pollution Pressure")
 plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
      ylim = st_bbox(species_range)[c(2,4)], main=t)
-plot(ne_country_lines, add=TRUE)
 plot(species_range, add=TRUE, border='black')
 plot(mean_pollution_pressure, add=TRUE, col = viridis(10))
+plot(ne_country_lines, add=TRUE)
 dev.off()
 
 ## Climate Change
@@ -885,9 +885,9 @@ par(mar = c(3,3,2,5))
 t <- str_glue("Mean Climate Change Pressure")
 plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
         ylim = st_bbox(species_range)[c(2,4)], main=t)
-plot(ne_country_lines, add=TRUE)
 plot(species_range, add=TRUE, border='black')
 plot(mean_climate_pressure, add=TRUE, col = viridis(10))
+plot(ne_country_lines, add=TRUE)
 dev.off()
 
 #### end ####
