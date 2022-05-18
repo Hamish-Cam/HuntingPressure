@@ -360,7 +360,7 @@ for (nm in names(pred_map)) {
     # Log transform
     r_plot <- log10(r_plot)
     # Breaks and legend
-    mx <- ceiling(100 * cellStats(r_plot, max)) / 100
+    mx <- 0.7
     mn <- floor(100 * cellStats(r_plot, min)) / 100
     brks <- seq(mn, mx, length.out = length(pal) + 1)
     lbl_brks <- sort(c(-2:2, mn, mx))
@@ -369,9 +369,9 @@ for (nm in names(pred_map)) {
     title <- paste(species_name, "Abundance Uncertainty (SE)")
     # Hard code a few uncertainty values are massive 
     mx <- 4 
-    mn <- 0
+    mn <- 1
     brks <- seq(mn, mx, length.out = length(pal) + 1)
-    lbl_brks <- seq(mn, mx, length.out = 5)
+    lbl_brks <- seq(mn, mx, length.out = 4)
     lbls <- round(lbl_brks, 2)
   }
   
@@ -520,7 +520,7 @@ for (nm in names(pred_map)) {
     # Log transform
     r_plot <- log10(r_plot)
     # Breaks and legend
-    mx <- ceiling(100 * cellStats(r_plot, max)) / 100
+    mx <- 0.7
     mn <- floor(100 * cellStats(r_plot, min)) / 100
     brks <- seq(mn, mx, length.out = length(pal) + 1)
     lbl_brks <- sort(c(-2:2, mn, mx))
@@ -528,9 +528,9 @@ for (nm in names(pred_map)) {
   } else {
     title <- paste(species_name, "Abundance Uncertainty (SE)")
     mx <- 4
-    mn <- 0
+    mn <- 1
     brks <- seq(mn, mx, length.out = length(pal) + 1)
-    lbl_brks <- seq(mn, mx, length.out = 5)
+    lbl_brks <- seq(mn, mx, length.out = 4)
     lbls <- round(lbl_brks, 2)
   }
   

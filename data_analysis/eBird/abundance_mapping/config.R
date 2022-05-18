@@ -1,4 +1,4 @@
-# Config script for 'get_abundance.R'
+# Config script for 'abundance_model_comparison.R'
 
 
 ################ Parameters ######################
@@ -13,15 +13,14 @@ data_folder <- "abun-ghb"
 # Selection is species dependent and can be informed using the IUCN RedList
 habitat_covariates <- c("elevation_median",
                         "pland_02_evergreen_broadleaf", 
-                        "pland_04_deciduous_broadleaf", 
+                        "pland_04_deciduous_broadleaf",
                         "pland_05_mixed_forest",
                         "pland_12_cropland")
+                        #"pland_08_woody_savanna", 
+                        #"pland_09_savanna")
 
 # Selection of non-habitat variables to include in the advanced model 
-non_habitat_covariates <- c("hunting_mean",
-                            "invasives_mean",
-                            "pollution_mean",
-                            "climate_mean")   
+non_habitat_covariates <- c("hunting_mean")   
 
 # Training proportion of train/test split
 train_prop <- 0.8
