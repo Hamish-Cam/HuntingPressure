@@ -9,12 +9,22 @@ species_name <- "Great Hornbill"
 # Name of the folder that contains input data folder
 data_folder <- "abun-ghb"
 
-# Relevant habitat covariates in the form: pland_<landcover code>_<landcover name> 
+# Selection of habitat covariates to be used for both models
 # Selection is species dependent and can be informed using the IUCN RedList
-habitat_covariates <- c("pland_02_evergreen_broadleaf", 
+habitat_covariates <- c("elevation_median",
+                        "pland_02_evergreen_broadleaf", 
                         "pland_04_deciduous_broadleaf", 
                         "pland_05_mixed_forest",
                         "pland_12_cropland")
+
+# Selection of non-habitat variables to include in the advanced model 
+non_habitat_covariates <- c("hunting_mean",
+                            "invasives_mean",
+                            "pollution_mean",
+                            "climate_mean")   
+
+# Training proportion of train/test split
+train_prop <- 0.8
 
 # GAM degrees of freedom 
 k <- 5

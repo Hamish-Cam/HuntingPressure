@@ -32,7 +32,7 @@ projection <- raster::projection
 set.seed(1)
 
 # Load the variable values from the config file
-source("config_abun.R")
+source("config.R")
 
 # setup output directory for saved results (abundance tifs)
 if (!dir.exists(file.path(data_folder, "output data"))){
@@ -54,18 +54,16 @@ ebird <- read_csv(file.path(data_folder, "input data", "ebd_processed_output.csv
   # remove observations with no count
   filter(!is.na(observation_count))
 
-# modis habitat covariates (landcover proportion and elevation information 
-# summarized by neighbourhoods around checklist locations)
-habitat <- read_csv(file.path(data_folder, "input data", "landcover_and_elevation_checklists.csv")) %>% 
+# checklist covariates data
+checklist_covs <- read_csv(file.path(data_folder, "input data", "landcover_elevation_and_pressure_checklists.csv")) %>% 
   mutate(year = as.integer(year))
 
-# combine ebird and habitat data (add env data for each observation)
-ebird_habitat <- inner_join(ebird, habitat, by = c("locality_id", "year"))
+# combine ebird and checklist_covs data (add covariate data for each observation)
+ebird_checklist_covs <- inner_join(ebird, checklist_covs, by = c("locality_id", "year"))
 
-# prediction surface - this is a regular grid of landcover type/elevation (our
-# habitat covariates) that we can use to make predictions for the whole prediction region
-# NOTE: this is NOT the same thing as the habitat covariate data seen
-pred_surface <- read_csv(file.path(data_folder, "input data", "landcover_and_elevation_prediction.csv"))
+# prediction surface - this is a regular grid of covariates that we can use to 
+# make predictions for the whole prediction region
+pred_surface <- read_csv(file.path(data_folder, "input data", "landcover_elevation_and_pressure_prediction.csv"))
 
 # latest year of landcover data available 
 max_lc_year <- pred_surface$year[1]
@@ -74,11 +72,13 @@ max_lc_year <- pred_surface$year[1]
 # the rest of the prediction surface data)
 r <- raster(file.path(data_folder, "input data", "prediction-surface.tif"))
 
-# load gis data for making maps (land boundary and possibly country lines)
+# load gis data for making maps (range, land and country boundaries)
+range <- read_sf(file.path(data_folder, "input data", "gis-data.gpkg"), "range") %>% 
+  st_geometry()
 ne_land <- read_sf(file.path(data_folder, "input data", "gis-data.gpkg"), "ne_land") %>% 
   st_geometry()
-#ne_country_lines <- read_sf(file.path(data_folder, "gis-data.gpkg"), "ne_country_lines") %>% 
-  #st_geometry()
+ne_country_lines <- read_sf(file.path(data_folder, "input data", "gis-data.gpkg"), "ne_country_lines") %>% 
+  st_geometry()
 
 #### end ####
 
@@ -92,10 +92,10 @@ ne_land <- read_sf(file.path(data_folder, "input data", "gis-data.gpkg"), "ne_la
 dggs <- dgconstruct(spacing = 5)
 
 # get hexagonal cell id (in mosaic) and week number for each checklist
-# Note: uses longitude and latitude columns from ebird_habitat and produces a 
+# Note: uses longitude and latitude columns from ebird_checklist_covs and produces a 
 # new dggs object, then extract the seqnum column since we want this. 'week' is 
 # a function that converts dates to week number in year
-checklist_cell <- ebird_habitat %>% 
+checklist_cell <- ebird_checklist_covs %>% 
   mutate(cell = dgGEO_to_SEQNUM(dggs, longitude, latitude)$seqnum,
          week = week(observation_date))
 
@@ -160,8 +160,8 @@ ebird_split <- ebird_ss %>%
          # Keep columns used to estimate 'effort' of detection
          day_of_year, time_observations_started, duration_minutes,
          effort_distance_km, number_observers, protocol_type,
-         # Keep relevant habitat covariates (chosen in config)
-         habitat_covariates) 
+         # Keep relevant habitat and pressure covariates (chosen in config)
+         habitat_covariates, pressure_covariates) 
 
 # select continuous predictors (remove response and time start)
 continuous_covs <- ebird_split %>% 
@@ -264,7 +264,7 @@ pred_model <- m_nb
 #### Abundance Prediction Mapping ####
 
 # So far we have used eBird data to create an abundance model that can predict the 
-# count number, given all the effort and habitat covariates we have used. Given that
+# count number, given all the covariates we have used. Given that
 # we want to predict over a whole region: we already made a prediction surface for 
 # the area of interest that contains landcover types (using MODIS). However, the effort
 # covariates do not exist in this way - they are dependent on an individual outing. 
@@ -275,9 +275,10 @@ pred_model <- m_nb
 
 # Create a df of covariates that take their mean values, or are 'standard' checklist
 # values but have a range of start times throughout the day
+# TODO
 seq_tod <- seq(0, 24, length.out = 300)
 tod_df <- ebird_split %>% 
-  select(starts_with("pland")) %>% 
+  select(starts_with(c("pland","hunting","pollution","invasives","climate","elevation"))) %>% 
   summarize_all(mean, na.rm = TRUE) %>% 
   ungroup() %>% 
   # Can change date depending on your time of interest
@@ -380,7 +381,8 @@ for (nm in names(r_pred)) {
   
   # Set the plot area and add GIS components
   par(mar = c(4.5, 0.25, 0.25, 0.25))
-  plot(ne_land, col = "#dddddd", border = "#888888", lwd = 0.5)
+  plot(ne_land, axes=TRUE, xlim = st_bbox(range)[c(1,3)], 
+       ylim = st_bbox(range)[c(2,4)])
   
   # Modified plasma (colour) palette
   plasma_rev <- rev(plasma(25, end = 0.9))
@@ -414,10 +416,10 @@ for (nm in names(r_pred)) {
   plot(r_plot, 
        col = pal, breaks = brks, 
        maxpixels = ncell(r_plot),
-       legend = FALSE, add = TRUE)
+       legend = FALSE, add = TRUE, border='black')
   
   # Add country lines for GIS
-  #plot(ne_country_lines, col = "#ffffff", lwd = 1.5, add = TRUE)
+  plot(ne_country_lines, add=TRUE)
   box()
   
   # Legend
