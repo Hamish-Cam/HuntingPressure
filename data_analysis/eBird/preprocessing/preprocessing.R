@@ -119,7 +119,7 @@ for (row in 1:nrow(species_data)){
   # Plot the land, country boundaries and range, using range bounds to limit axes
   pdf(file = file.path(data_folder, "analytics", sprintf("%s_range_map.pdf", short_code)))
   plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
-          ylim = st_bbox(species_range)[c(2,4)], main=paste(species_name, "Range Map"))
+          ylim = st_bbox(species_range)[c(2,4)], main=paste(current_species$common_name, "Range Map"))
   plot(species_range, add=TRUE, col=alpha("orange",0.7), border='transparent')
   plot(ne_country_lines, add=TRUE)
   dev.off()
@@ -238,7 +238,7 @@ for (row in 1:nrow(species_data)){
   # Set up a plot area and plot data/GIS
   pdf(file = file.path(data_folder, "analytics", sprintf("%s_eBird_checklists_map.pdf", short_code)))
   plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
-          ylim = st_bbox(species_range)[c(2,4)], main=paste(species_name, "eBird Observations"))
+          ylim = st_bbox(species_range)[c(2,4)], main=paste(current_species$common_name, "eBird Observations"))
   plot(species_range, add=TRUE, col=alpha("orange",0.7), border='transparent')
   plot(ne_country_lines, add=TRUE)
   
@@ -253,7 +253,7 @@ for (row in 1:nrow(species_data)){
   # Add a legend and title
   legend("bottomleft", bty = "n",
          col = c("#555555", "#4daf4a"),
-         legend = c("eBird checklists", paste(species_name, "sightings")),
+         legend = c("eBird checklists", paste(current_species$common_name, "sightings")),
          pch = 19)
   dev.off()
   
