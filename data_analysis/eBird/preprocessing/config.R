@@ -3,22 +3,21 @@
 
 ################ Parameters ######################
 
+
+# Specify which species to study - Entries must be in the form:
+#     c(common name, scientific name used by IUCN)
+selected_species <- data.frame(c("Great Hornbill", "Buceros bicornis"),
+                               c("Large Cuckooshrike", "Coracina javensis")) 
+
+# Continent of study 
+continent <- "Asia"
+
 # Earthdata login credentials
 username = "hrac2"
 password = "mQ5taFmenGs9oHS"
 
-# Common name and scientific name of species 
-species_name <- "Large Cuckooshrike"            
-species_name_scientific <- "Coracina macei"
-
-# Continent of study (not strictly necessary but I am only looking at Asia atm)
-continent <- "Asia"
-
 # Name of the folder that contains input data folder for species specific data
-data_folder <- "data-lcs"
-
-# Name of downloaded eBird species data file
-species_data <- "ebd_larcus1_relApr-2022.txt"
+data_folder <- "data"
 
 # Path to permanent location containing general data (sampling, elevation, range etc.)
 perm_files_location <- "~/hunting_data"
