@@ -831,7 +831,7 @@ for (row in 1:nrow(species_data)){
   
   # Save a plot of hunting for whole world as illustration
   setEPS()
-  postscript(file.path(data_folder, "analytics", sprintf("%s_hunting_whole_world.eps", short_code)))
+  postscript(file.path(data_folder, "analytics", "hunting_whole_world.eps"))
   plot(threats_birds["B5_1"], border = 'transparent', 
        pal=plasma, nbreaks=8, key.pos=4, main=NULL, key.length=lcm(8))
   dev.off()

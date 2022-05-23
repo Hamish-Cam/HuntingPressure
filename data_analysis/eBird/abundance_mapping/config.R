@@ -3,21 +3,14 @@
 
 ################ Parameters ######################
 
-# Common name of species 
-species_name <- "Great Hornbill"  
+
+# Specify which species to study - Entries must be in the form:
+#     c(common name, scientific name used by IUCN)
+selected_species <- data.frame(c("Great Hornbill", "Buceros bicornis"),
+                               c("Large Cuckooshrike", "Coracina javensis"))
 
 # Name of the folder that contains input data folder
-data_folder <- "abun-ghb"
-
-# Selection of habitat covariates to be used for both models
-# Selection is species dependent and can be informed using the IUCN RedList
-habitat_covariates <- c("elevation_median",
-                        "pland_02_evergreen_broadleaf", 
-                        "pland_04_deciduous_broadleaf",
-                        "pland_05_mixed_forest",
-                        "pland_12_cropland")
-                        #"pland_08_woody_savanna", 
-                        #"pland_09_savanna")
+data_folder <- "data"
 
 # Selection of non-habitat variables to include in the advanced model 
 non_habitat_covariates <- c("hunting_mean")   
@@ -38,10 +31,6 @@ time_of_year <- "06-15"
 zero_threshold <- 0.05
 
 ################ end ######################
-
-
-
-
 
 
 
