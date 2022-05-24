@@ -9,11 +9,11 @@
 selected_species <- data.frame(c("Great Hornbill", "Buceros bicornis"),
                                c("Large Cuckooshrike", "Coracina javensis"))
 
-# Name of the folder that contains input data folder
-data_folder <- "data"
-
 # Selection of non-habitat variables to include in the advanced model 
 non_habitat_covariates <- c("hunting_mean")   
+
+# Name of the folder that contains input data folder
+data_folder <- "data"
 
 # Training proportion of train/test split
 train_prop <- 0.8

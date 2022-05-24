@@ -37,9 +37,10 @@ if (!dir.exists(file.path(data_folder, "analytics"))){
   dir.create(file.path(data_folder, "analytics"))
 }
 
-# State the habitat covariates to use (we use all that are found semi-regularly)
-# in SE Asia 
-habitat_covariates <- c("pland_00_water", 
+# State the habitat covariates to use: elevation and landcover (we use all that 
+# are found semi-regularly in SE Asia) 
+habitat_covariates <- c("elevation_median",
+                        "pland_00_water", 
                         "pland_01_evergreen_needleleaf", 
                         "pland_02_evergreen_broadleaf", 
                         "pland_04_deciduous_broadleaf", 
