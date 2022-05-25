@@ -85,12 +85,18 @@ for (row in 1:nrow(species_data)){
   # Add a buffer of 100km around the inexact range polygon to allow for error
   species_range <- st_buffer(species_range, 100000)
   
-  # Now get land and country boundaries for plotting purposes 
+  # Limit this extended range to that only within the country of study
+  country_boundary <- ne_countries(country = country, scale = 50) %>%
+            polygons(.) %>%
+            st_as_sf(.)
+  species_range <- st_intersection(species_range, country_boundary) 
+  
+  # Now get all Asian land and country boundaries for plotting purposes 
   # Land boundaries 
   ne_land <- ne_download(scale = 50, category = "cultural",
                          type = "admin_0_countries_lakes",
                          returnclass = "sf") %>%
-    filter(CONTINENT == continent) %>%
+    filter(CONTINENT == "Asia") %>%
     st_set_precision(1e6) %>%
     st_union()
   
@@ -104,9 +110,6 @@ for (row in 1:nrow(species_data)){
     as.logical() %>%
     {ne_country_lines[.]}
   
-  # Also now limit the buffered range to keep only sections on land
-  species_range <- st_intersection(species_range, ne_land) 
-  
   # Output relevant GIS data
   write_sf(ne_land, f_ne, "ne_land")
   write_sf(ne_country_lines, f_ne, "ne_country_lines")
@@ -119,7 +122,7 @@ for (row in 1:nrow(species_data)){
   # Plot the land, country boundaries and range, using range bounds to limit axes
   pdf(file = file.path(data_folder, "analytics", sprintf("%s_range_map.pdf", short_code)))
   plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
-          ylim = st_bbox(species_range)[c(2,4)], main=paste(current_species$common_name, "Range Map"))
+          ylim = st_bbox(species_range)[c(2,4)], main=paste(current_species$common_name, "Range in", country))
   plot(species_range, add=TRUE, col=alpha("orange",0.7), border='transparent')
   plot(ne_country_lines, add=TRUE)
   dev.off()
@@ -140,6 +143,8 @@ for (row in 1:nrow(species_data)){
     auk_bbox(species_range) %>%
     # Restrict species to just that of interest
     auk_species(current_species$scientific_name_eBird) %>%
+    # Restrict checklists to just the country that the user has specified 
+    auk_country(country) %>%
     # restrict to the standard traveling and stationary count protocols
     auk_protocol(protocol = c("Stationary", "Traveling")) %>% 
     auk_complete()

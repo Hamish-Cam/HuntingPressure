@@ -9,8 +9,8 @@
 selected_species <- data.frame(c("Great Hornbill", "Buceros bicornis"),
                                c("Large Cuckooshrike", "Coracina javensis")) 
 
-# Continent of study 
-continent <- "Asia"
+# Country of study (within SE Asia)
+country <- "Thailand"
 
 # Earthdata login credentials
 username = "hrac2"
