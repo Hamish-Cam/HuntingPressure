@@ -5,13 +5,13 @@
 
 
 # Specify which species to study - Entries must be in the form:
-#     c(common name, scientific name used by IUCN)
+#     c(common name (according to eBird), scientific name (according to IUCN))
 selected_species <- data.frame(c("Great Hornbill", "Buceros bicornis"),
-                               c("Oriental Pied Hornbill", "Anthracoceros albirostris"),
+                               c("Oriental Pied-Hornbill", "Anthracoceros albirostris"),
                                c("Wreathed Hornbill", "Rhyticeros undulatus"),
-                               c("Green-legged Partridge", "Tropicoperdix chloropus"),
-                               c("Green Imperial-pigeon", "Ducula aenea"),
-                               c("Ashy-headed Green-pigeon", "Treron phayrei"),
+                               c("Scaly-breasted Partridge", "Tropicoperdix chloropus"),
+                               c("Green Imperial-Pigeon", "Ducula aenea"),
+                               c("Ashy-headed Green-Pigeon", "Treron phayrei"),
                                c("Alexandrine Parakeet", "Palaeornis eupatria"),
                                c("Blossom-headed Parakeet", "Himalayapsitta roseata"),
                                c("White-rumped Shama",	"Kittacincla malabarica"),
