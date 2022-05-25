@@ -7,7 +7,15 @@
 # Specify which species to study - Entries must be in the form:
 #     c(common name, scientific name used by IUCN)
 selected_species <- data.frame(c("Great Hornbill", "Buceros bicornis"),
-                               c("Large Cuckooshrike", "Coracina javensis")) 
+                               c("Oriental Pied Hornbill", "Anthracoceros albirostris"),
+                               c("Wreathed Hornbill", "Rhyticeros undulatus"),
+                               c("Green-legged Partridge", "Tropicoperdix chloropus"),
+                               c("Green Imperial-pigeon", "Ducula aenea"),
+                               c("Ashy-headed Green-pigeon", "Treron phayrei"),
+                               c("Alexandrine Parakeet", "Palaeornis eupatria"),
+                               c("Blossom-headed Parakeet", "Himalayapsitta roseata"),
+                               c("White-rumped Shama",	"Kittacincla malabarica"),
+                               c("Indian White-eye", "Zosterops palpebrosus"))
 
 # Country of study (within SE Asia)
 country <- "Thailand"
