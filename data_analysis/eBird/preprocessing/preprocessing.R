@@ -89,7 +89,11 @@ for (row in 1:nrow(species_data)){
   country_boundary <- ne_countries(country = country, scale = 50) %>%
             polygons(.) %>%
             st_as_sf(.)
+  
+  # Due to errors with some range polygons temporarily turn off use of s2 for intersection
+  sf_use_s2(FALSE)
   species_range <- st_intersection(species_range, country_boundary) 
+  sf_use_s2(TRUE)
   
   # Now get all Asian land and country boundaries for plotting purposes 
   # Land boundaries 
