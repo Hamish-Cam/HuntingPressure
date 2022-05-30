@@ -82,19 +82,24 @@ for (row in 1:nrow(species_data)){
   species_range <- st_read(dsn=file.path(perm_files_location, "BOTW.gdb"), query = range_query) %>%
                       select(Shape)
   
+  # Some of the range polygons have issues 
+  if(!st_is_valid(species_range)){
+    species_range <- st_make_valid(
+      species_range,
+      oriented = FALSE,
+      s2_options = s2::s2_options(snap = s2::s2_snap_precision(1e+06))
+    )
+  }
+  
   # Add a buffer of 100km around the inexact range polygon to allow for error
-  species_range <- st_buffer(species_range, 100000)
+  species_range <- st_buffer(range_fix, 100000)
   
   # Limit this extended range to that only within the country of study
   country_boundary <- ne_countries(country = country, scale = 50) %>%
             polygons(.) %>%
             st_as_sf(.)
-  
-  # Due to errors with some range polygons temporarily turn off use of s2 for intersection
-  sf_use_s2(FALSE)
   species_range <- st_intersection(species_range, country_boundary) 
-  sf_use_s2(TRUE)
-  
+
   # Now get all Asian land and country boundaries for plotting purposes 
   # Land boundaries 
   ne_land <- ne_download(scale = 50, category = "cultural",
