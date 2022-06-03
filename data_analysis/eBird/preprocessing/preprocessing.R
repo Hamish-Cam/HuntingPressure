@@ -82,6 +82,11 @@ for (row in 1:nrow(species_data)){
   species_range <- st_read(dsn=file.path(perm_files_location, "BOTW.gdb"), query = range_query) %>%
                       select(Shape)
   
+  # If not just resident areas, then take resident polygon (last one)
+  if(nrow(species_range) > 1){
+    species_range <- species_range[nrow(species_range),1]
+  }
+  
   # Some of the range polygons have issues 
   if(!st_is_valid(species_range)){
     species_range <- st_make_valid(
