@@ -164,7 +164,7 @@ for (row in 1:nrow(species_data)){
   f_sampling <- file.path(data_folder, "ebd_samp_filtered_output.txt")
   
   # Apply filters to eBird data
-  auk_filter(ebd_filters, file = f_ebd, file_sampling = f_sampling)
+  auk_filter(ebd_filters, file = f_ebd, file_sampling = f_sampling, overwrite = TRUE)
   
   # Read in the data and zero-fill using sampling info to produce full presence/absence data
   ebd_zf <- auk_zerofill(f_ebd, f_sampling, collapse = TRUE)
