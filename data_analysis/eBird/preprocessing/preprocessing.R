@@ -79,13 +79,11 @@ for (row in 1:nrow(species_data)){
   # Get species range polygon from BirdLife data for species requested in config
   range_query <- paste('SELECT * FROM "All_Species" WHERE sci_name = \'', 
                        current_species$scientific_name_IUCN, '\'', sep='')
-  species_range <- st_read(dsn=file.path(perm_files_location, "BOTW.gdb"), query = range_query) %>%
-                      select(Shape)
+  species_range <- st_read(dsn=file.path(perm_files_location, "BOTW.gdb"), query = range_query)
   
-  # If not just resident areas, then take resident polygon (last one)
-  if(nrow(species_range) > 1){
-    species_range <- species_range[nrow(species_range),1]
-  }
+  # Get range polygon corresponding to extant, native and resident row
+  species_range <- filter(species_range, presence==1, origin==1, seasonal==1) %>%
+                      select(Shape)
   
   # Some of the range polygons have issues 
   if(!st_is_valid(species_range)){

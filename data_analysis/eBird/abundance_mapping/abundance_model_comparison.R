@@ -38,10 +38,8 @@ if (!dir.exists(file.path(data_folder, "analytics"))){
 }
 
 # State the habitat covariates to use: elevation and landcover (we use all that 
-# are found semi-regularly in SE Asia) 
+# are found semi-regularly in SE Asia i.e. > 1% proportion) 
 habitat_covariates <- c("elevation_median",
-                        "pland_00_water", 
-                        "pland_01_evergreen_needleleaf", 
                         "pland_02_evergreen_broadleaf", 
                         "pland_04_deciduous_broadleaf", 
                         "pland_05_mixed_forest",
@@ -51,8 +49,7 @@ habitat_covariates <- c("elevation_median",
                         "pland_11_wetland", 
                         "pland_12_cropland", 
                         "pland_13_urban", 
-                        "pland_14_mosiac", 
-                        "pland_15_barren")
+                        "pland_14_mosiac")
 
 # Setup dataframes for storing the relevant model performance metrics
 spearman_ranks <- data.frame(species=c(), baseline=c(), advanced=c())
