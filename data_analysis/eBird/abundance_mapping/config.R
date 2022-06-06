@@ -24,9 +24,9 @@ non_hunted_species <- data.frame(c("Banded Bay Cuckoo", "Cacomantis sonneratii")
                                  c("Large-tailed Nightjar",	"Caprimulgus macrurus"),
                                  #c("Rufous Woodpecker",	"Micropternus brachyurus"),
                                  c("Plain Flowerpecker", "Dicaeum minullum"),
-                                 c("Plain-backed Sparrow", "Passer flaveolus"))
-                                 #c("Sooty-headed Bulbul",	"Pycnonotus aurigaster"),
-                                 #c("Common Tailorbird",	"Orthotomus sutorius"))
+                                 c("Plain-backed Sparrow", "Passer flaveolus"),
+                                 c("Sooty-headed Bulbul",	"Pycnonotus aurigaster"),
+                                 c("Common Tailorbird",	"Orthotomus sutorius"))
 
 ################ end ######################
 
@@ -34,7 +34,7 @@ non_hunted_species <- data.frame(c("Banded Bay Cuckoo", "Cacomantis sonneratii")
 ################ Parameters ######################
 
 # Specify whether to use the hunted or non-hunted species sets
-selected_species <- hunted_species
+selected_species <- non_hunted_species
 
 # Selection of non-habitat variables to include in the advanced model 
 non_habitat_covariates <- c("hunting_mean")   
