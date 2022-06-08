@@ -1,6 +1,6 @@
 # Hamish Campbell 
 
-#> Code to download/process/analyse the necessary datasets for getting species abundance maps:
+#> Code based heavily on:
 #> https://cornelllabofornithology.github.io/ebird-best-practices/index.html
 
 #> NOTE: the readme should be consulted before running this code.
@@ -66,8 +66,7 @@ for (row in 1:nrow(species_data)){
   short_code <- current_species$species_code
   data_timestamp <- str_extract(sampling_data, "\\w{3}-\\d{4}")
   current_species_data <- sprintf("ebd_%s_rel%s.txt", short_code, data_timestamp)
-  
-  
+
   #### Species Range ####
   
   # File to save GIS data 
@@ -80,7 +79,7 @@ for (row in 1:nrow(species_data)){
   range_query <- paste('SELECT * FROM "All_Species" WHERE sci_name = \'', 
                        current_species$scientific_name_IUCN, '\'', sep='')
   species_range <- st_read(dsn=file.path(perm_files_location, "BOTW.gdb"), query = range_query)
-  
+
   # Get range polygon corresponding to extant, native and resident row
   species_range <- filter(species_range, presence==1, origin==1, seasonal==1) %>%
                       select(Shape)
@@ -237,224 +236,7 @@ for (row in 1:nrow(species_data)){
            duration_minutes, effort_distance_km,
            number_observers)
   
-  # Finally, write the data to an output CSV file
-  csv_name <- file.path(data_folder, "output data", sprintf("%s_ebd_processed_output.csv", short_code))
-  write_csv(ebird, csv_name, na = "")
-  
-  #### end ####
-  
-  #### eBird Analysis ####
-  
-  # Start by producing a spatial map of all checklists recorded
-  # Prepare ebird data for mapping
-  ebird_sf <- ebird %>% 
-    # convert to spatial points
-    st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
-    select(species_observed)
-  
-  # Set up a plot area and plot data/GIS
-  pdf(file = file.path(data_folder, "analytics", sprintf("%s_eBird_checklists_map.pdf", short_code)))
-  plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
-          ylim = st_bbox(species_range)[c(2,4)], main=paste(current_species$common_name, "eBird Observations"))
-  plot(species_range, add=TRUE, col=alpha("orange",0.7), border='transparent')
-  plot(ne_country_lines, add=TRUE)
-  
-  # eBird observations - colour black as not-observed and green as observed
-  plot(st_geometry(ebird_sf),
-       pch = 19, cex = 0.1, col = alpha("#555555", 0.25),
-       add = TRUE)
-  plot(filter(ebird_sf, species_observed) %>% st_geometry(),
-       pch = 19, cex = 0.4, col = alpha("#4daf4a", 1),
-       add = TRUE)
-  
-  # Add a legend and title
-  legend("bottomleft", bty = "n",
-         col = c("#555555", "#4daf4a"),
-         legend = c("eBird checklists", paste(current_species$common_name, "sightings")),
-         pch = 19)
-  dev.off()
-  
-  
-  # Now lets explore how observations of the species are effected by each of the 
-  # effort variables 
-  
-  # Time of day
-  # summarize data by hourly bins
-  breaks <- 0:24
-  labels <- breaks[-length(breaks)] + diff(breaks) / 2
-  ebird_tod <- ebird %>% 
-    mutate(tod_bins = cut(time_observations_started, 
-                          breaks = breaks, 
-                          labels = labels,
-                          include.lowest = TRUE),
-           tod_bins = as.numeric(as.character(tod_bins))) %>% 
-    group_by(tod_bins) %>% 
-    summarise(n_checklists = n(),
-              n_detected = sum(species_observed),
-              det_freq = mean(species_observed))
-  
-  # histogram
-  pdf(file = file.path(data_folder, "analytics", sprintf("%s_effort_time-of-day.pdf", short_code)))
-  g_tod_hist <- ggplot(ebird_tod) +
-    aes(x = tod_bins, y = n_checklists) +
-    geom_segment(aes(xend = tod_bins, y = 0, yend = n_checklists),
-                 color = "grey50") +
-    geom_point() +
-    scale_x_continuous(breaks = seq(0, 24, by = 3), limits = c(0, 24)) +
-    scale_y_continuous(labels = scales::comma) +
-    labs(x = "Hours since midnight",
-         y = "# checklists",
-         title = "Distribution of observation start times")
-  
-  # frequency of detection
-  g_tod_freq <- ggplot(ebird_tod %>% filter(n_checklists > 100)) +
-    aes(x = tod_bins, y = det_freq) +
-    geom_line() +
-    geom_point() +
-    scale_x_continuous(breaks = seq(0, 24, by = 3), limits = c(0, 24)) +
-    scale_y_continuous(labels = scales::percent) +
-    labs(x = "Hours since midnight",
-         y = "% checklists with detections",
-         title = "Detection frequency")
-  
-  # combine
-  grid.arrange(g_tod_hist, g_tod_freq)
-  dev.off()
-  
-  
-  # Checklist Duration
-  # summarize data by 30 minute bins
-  breaks <- seq(0, 5, by = 0.5)
-  labels <- breaks[-length(breaks)] + diff(breaks) / 2
-  ebird_dur <- ebird %>% 
-    mutate(dur_bins = cut(duration_minutes / 60, 
-                          breaks = breaks, 
-                          labels = labels,
-                          include.lowest = TRUE),
-           dur_bins = as.numeric(as.character(dur_bins))) %>% 
-    group_by(dur_bins) %>% 
-    summarise(n_checklists = n(),
-              n_detected = sum(species_observed),
-              det_freq = mean(species_observed))
-  
-  # histogram
-  pdf(file = file.path(data_folder, "analytics", sprintf("%s_effort_duration.pdf", short_code)))
-  g_dur_hist <- ggplot(ebird_dur) +
-    aes(x = dur_bins, y = n_checklists) +
-    geom_segment(aes(xend = dur_bins, y = 0, yend = n_checklists),
-                 color = "grey50") +
-    geom_point() +
-    scale_x_continuous(breaks = 0:5) +
-    scale_y_continuous(labels = scales::comma) +
-    labs(x = "Checklist duration (hours)",
-         y = "# checklists",
-         title = "Distribution of checklist durations")
-  
-  # frequency of detection
-  g_dur_freq <- ggplot(ebird_dur %>% filter(n_checklists > 100)) +
-    aes(x = dur_bins, y = det_freq) +
-    geom_line() +
-    geom_point() +
-    scale_x_continuous(breaks = 0:5) +
-    scale_y_continuous(labels = scales::percent) +
-    labs(x = "Checklist duration (hours)",
-         y = "% checklists with detections",
-         title = "Detection frequency")
-  
-  # combine
-  grid.arrange(g_dur_hist, g_dur_freq)
-  dev.off()
-  
-  
-  # Distance Traveled 
-  # summarize data by 500m bins
-  breaks <- seq(0, 5, by = 0.5)
-  labels <- breaks[-length(breaks)] + diff(breaks) / 2
-  ebird_dist <- ebird %>% 
-    mutate(dist_bins = cut(effort_distance_km, 
-                           breaks = breaks, 
-                           labels = labels,
-                           include.lowest = TRUE),
-           dist_bins = as.numeric(as.character(dist_bins))) %>% 
-    group_by(dist_bins) %>% 
-    summarise(n_checklists = n(),
-              n_detected = sum(species_observed),
-              det_freq = mean(species_observed))
-  
-  # histogram
-  pdf(file = file.path(data_folder, "analytics", sprintf("%s_effort_distance-travelled.pdf", short_code)))
-  g_dist_hist <- ggplot(ebird_dist) +
-    aes(x = dist_bins, y = n_checklists) +
-    geom_segment(aes(xend = dist_bins, y = 0, yend = n_checklists),
-                 color = "grey50") +
-    geom_point() +
-    scale_x_continuous(breaks = 0:5) +
-    scale_y_continuous(labels = scales::comma) +
-    labs(x = "Distance travelled (km)",
-         y = "# checklists",
-         title = "Distribution of distance travelled")
-  
-  # frequency of detection
-  g_dist_freq <- ggplot(ebird_dist %>% filter(n_checklists > 100)) +
-    aes(x = dist_bins, y = det_freq) +
-    geom_line() +
-    geom_point() +
-    scale_x_continuous(breaks = 0:5) +
-    scale_y_continuous(labels = scales::percent) +
-    labs(x = "Distance travelled (km)",
-         y = "% checklists with detections",
-         title = "Detection frequency")
-  
-  # combine
-  grid.arrange(g_dist_hist, g_dist_freq)
-  dev.off()
-  
-  # Since most walks are short, landcover neighborhoods at location will describe 
-  # habitat at sighting location well!
-  
-  
-  # Number of Observers 
-  # summarize data
-  breaks <- 0:10
-  labels <- 1:10
-  ebird_obs <- ebird %>% 
-    mutate(obs_bins = cut(number_observers, 
-                          breaks = breaks, 
-                          label = labels,
-                          include.lowest = TRUE),
-           obs_bins = as.numeric(as.character(obs_bins))) %>% 
-    group_by(obs_bins) %>% 
-    summarise(n_checklists = n(),
-              n_detected = sum(species_observed),
-              det_freq = mean(species_observed))
-  
-  # histogram
-  pdf(file = file.path(data_folder, "analytics", sprintf("%s_effort_number-of-observers.pdf", short_code)))
-  g_obs_hist <- ggplot(ebird_obs) +
-    aes(x = obs_bins, y = n_checklists) +
-    geom_segment(aes(xend = obs_bins, y = 0, yend = n_checklists),
-                 color = "grey50") +
-    geom_point() +
-    scale_x_continuous(breaks = 1:10) +
-    scale_y_continuous(labels = scales::comma) +
-    labs(x = "# observers",
-         y = "# checklists",
-         title = "Distribution of the number of observers")
-  
-  # frequency of detection
-  g_obs_freq <- ggplot(ebird_obs %>% filter(n_checklists > 100)) +
-    aes(x = obs_bins, y = det_freq) +
-    geom_line() +
-    geom_point() +
-    scale_x_continuous(breaks = 1:10) +
-    scale_y_continuous(labels = scales::percent) +
-    labs(x = "# observers",
-         y = "% checklists with detections",
-         title = "Detection frequency")
-  
-  # combine
-  grid.arrange(g_obs_hist, g_obs_freq)
-  dev.off()
+  # Note: eBird analysis happens post covariate processing due to alterations
   
   #### end ####
   
@@ -739,8 +521,6 @@ for (row in 1:nrow(species_data)){
   
   # Join the PLAND and elevation covariates for eBird data 
   pland_elev_checklist <- inner_join(pland, elev_checklists, by = "locality_id")
-  
-  # Join the PLAND and elevation covariates for prediction surface 
   pland_elev_pred <- inner_join(pland_coords, elev_pred, by = "id")
   
   #### end ####
@@ -833,14 +613,7 @@ for (row in 1:nrow(species_data)){
   
   # Join the PLAND and elevation covariates, with the pressure data
   pland_elev_pressure_checklist <- inner_join(pland_elev_checklist, pressure_checklists, by = "locality_id")
-  write_csv(pland_elev_pressure_checklist, file.path(data_folder, "output data",
-                sprintf("%s_landcover_elevation_and_pressure_checklists.csv", short_code)))
-  
-  # Join the PLAND and elevation covariates, for prediction surface, with pressure data
   pland_elev_pressure_pred <- inner_join(pland_elev_pred, pressure_pred, by = "id")
-  write_csv(pland_elev_pressure_pred, file.path(data_folder, "output data",
-                sprintf("%s_landcover_elevation_and_pressure_prediction.csv", short_code)))
-  
   
   #### end ####
   
@@ -874,14 +647,338 @@ for (row in 1:nrow(species_data)){
   
   #### end ####
   
+  
+  #### Accessibility Data ####
+  
+  # Data download from: https://forobs.jrc.ec.europa.eu/products/gam/download.php
+  access <- raster(file.path(perm_files_location, "acc_50k.tif"))
+  
+  # crop and buffer prediction region by 10 km to provide a little wiggle room
+  access <- gis_land %>% 
+    st_buffer(dist = 10000) %>% 
+    st_transform(crs = projection(access)) %>% 
+    crop(access, .) %>% 
+    projectRaster(crs = projection(landcover))
+  
+  # Create neighbourhood area around each checklist location
+  ebird_buff_noyear <- ebird %>% 
+    distinct(locality_id, latitude, longitude) %>% 
+    st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
+    st_transform(crs = projection(access)) %>% 
+    st_buffer(dist = neighborhood_radius)
+  
+  # Extract mean time to city of more than 50,000 people within neighbourhood 
+  locs <- st_set_geometry(ebird_buff_noyear, NULL) %>% 
+    mutate(id = row_number())
+  access_checklists <- exact_extract(access, ebird_buff_noyear, progress = FALSE) %>% 
+    map_dfr(~ tibble(access_mean = mean(.$value, na.rm = TRUE))) %>% 
+    # join to lookup table to get locality_id
+    bind_cols(locs, .) 
+  
+  # Extract mean value for prediction surface also
+  access_pred <- exact_extract(access, r_cells, progress = FALSE) %>% 
+    map_dfr(~ tibble(access_mean = mean(.$value, na.rm = TRUE))) %>% 
+    # join to lookup table to get locality_id
+    bind_cols(st_drop_geometry(r_cells), .) 
+  
+  # Join the accessibility data with the rest of the covariate data
+  covariate_checklists <- inner_join(pland_elev_pressure_checklist, access_checklists, by = "locality_id")
+  covariate_preds <- inner_join(pland_elev_pressure_pred, access_pred, by = "id")
+  
+  ## Some points are calculated incorrectly due to poor match up of gis and accessibility data
+  # For checklists - remove troublesome entries entirely.
+  # Get problem checklists from covariate data
+  problem_checklists <- covariate_checklists[is.na(covariate_checklists$access_mean), c("locality_id","access_mean")]
+  
+  # For each problem checklist, remove any checklists at that location entirely
+  for (row in 1:nrow(problem_checklists)){
+    problem_location <- problem_checklists[row,]
+    # Remove problem entries in covariate data
+    covariate_checklists <- filter(covariate_checklists, locality_id != problem_location$locality_id)
+    # Remove problem entries in ebird data
+    ebird <- filter(ebird, locality_id != problem_location$locality_id)
+  }
+  
+  # For prediction points - interpolate missing data using nearest valid neighbour's value.
+  # Get problem prediction points from covariate data and convert to an sf object
+  problem_preds <- covariate_preds[is.na(covariate_preds$access_mean), c("id","latitude","longitude","access_mean")]
+  problem_preds <- st_as_sf(problem_preds, coords = c("longitude", "latitude"), crs=4326)
+  
+  # Get the valid prediction points from covariate data and convert to an sf object 
+  valid_preds <- covariate_preds[!is.na(covariate_preds$access_mean), c("latitude","longitude","access_mean")]
+  valid_preds <- st_as_sf(valid_preds, coords = c("longitude", "latitude"), crs=4326)
+  
+  # For each problem point, find its nearest valid neighbour and use its accessibility value
+  for (row in 1:nrow(problem_preds)){
+    problem_pred <- problem_preds[row,]
+    # Find distances to each valid row
+    distances <- st_distance(problem_pred[c("geometry","access_mean")], valid_preds)
+    # Get the index of the closest point
+    index_min <- which.min(distances)
+    # Get accessibility at this closest point
+    new_access <- st_drop_geometry(valid_preds[index_min,"access_mean"])
+    # Save this value as the new value of the corresponding problem checklist
+    covariate_preds[covariate_preds$id == problem_pred$id, "access_mean"] <- new_access
+  }
+  
+  # Save the updated covariate data
+  write_csv(covariate_checklists, file.path(data_folder, "output data",
+              sprintf("%s_covariate_checklists.csv", short_code)))
+  write_csv(covariate_preds, file.path(data_folder, "output data",
+              sprintf("%s_covariate_predictions.csv", short_code)))
+  
+  # Finally, save the updated eBird data also
+  csv_name <- file.path(data_folder, "output data", sprintf("%s_ebd_processed_output.csv", short_code))
+  write_csv(ebird, csv_name, na = "")
+  
+  #### end ####
+  
+  #### Accessibility Analysis ####
+  
+  # Plot the accessibility data as a map 
+  access <- covariate_preds %>% 
+    st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
+    st_transform(crs = projection(r)) %>% 
+    rasterize(r, field = "access_mean") %>% 
+    projectRaster(crs = st_crs(4326)$proj4string, method = "ngb") %>%
+    trim()
+
+  # make a map
+  pdf(file = file.path(data_folder, "analytics", sprintf("%s_accessibility_map.pdf", short_code)))
+  par(mar = c(3,3,2,5))
+  t <- str_glue("Mean Accessibility Values (mins)")
+  plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
+       ylim = st_bbox(species_range)[c(2,4)], main=t)
+  plot(species_range, add=TRUE, border='black')
+  plot(access, add = TRUE, col = viridis(6), main = t)
+  plot(ne_country_lines, add=TRUE)
+  dev.off()
+  
+  #### end ####
+  
+  
+  #### eBird Analysis ####
+  
+  # Plots only generated at this point due to updated eBird data from accessibility section
+  
+  # Start by producing a spatial map of all checklists recorded
+  # Prepare ebird data for mapping
+  ebird_sf <- ebird %>% 
+    # convert to spatial points
+    st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
+    select(species_observed)
+  
+  # Set up a plot area and plot data/GIS
+  pdf(file = file.path(data_folder, "analytics", sprintf("%s_eBird_checklists_map.pdf", short_code)))
+  plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
+       ylim = st_bbox(species_range)[c(2,4)], main=paste(current_species$common_name, "eBird Observations"))
+  plot(species_range, add=TRUE, col=alpha("orange",0.7), border='transparent')
+  plot(ne_country_lines, add=TRUE)
+  
+  # eBird observations - colour black as not-observed and green as observed
+  plot(st_geometry(ebird_sf),
+       pch = 19, cex = 0.1, col = alpha("#555555", 0.25),
+       add = TRUE)
+  plot(filter(ebird_sf, species_observed) %>% st_geometry(),
+       pch = 19, cex = 0.4, col = alpha("#4daf4a", 1),
+       add = TRUE)
+  
+  # Add a legend and title
+  legend("bottomleft", bty = "n",
+         col = c("#555555", "#4daf4a"),
+         legend = c("eBird checklists", paste(current_species$common_name, "sightings")),
+         pch = 19)
+  dev.off()
+  
+  
+  # Now lets explore how observations of the species are effected by each of the 
+  # effort variables 
+  
+  # Time of day
+  # summarize data by hourly bins
+  breaks <- 0:24
+  labels <- breaks[-length(breaks)] + diff(breaks) / 2
+  ebird_tod <- ebird %>% 
+    mutate(tod_bins = cut(time_observations_started, 
+                          breaks = breaks, 
+                          labels = labels,
+                          include.lowest = TRUE),
+           tod_bins = as.numeric(as.character(tod_bins))) %>% 
+    group_by(tod_bins) %>% 
+    summarise(n_checklists = n(),
+              n_detected = sum(species_observed),
+              det_freq = mean(species_observed))
+  
+  # histogram
+  pdf(file = file.path(data_folder, "analytics", sprintf("%s_effort_time-of-day.pdf", short_code)))
+  g_tod_hist <- ggplot(ebird_tod) +
+    aes(x = tod_bins, y = n_checklists) +
+    geom_segment(aes(xend = tod_bins, y = 0, yend = n_checklists),
+                 color = "grey50") +
+    geom_point() +
+    scale_x_continuous(breaks = seq(0, 24, by = 3), limits = c(0, 24)) +
+    scale_y_continuous(labels = scales::comma) +
+    labs(x = "Hours since midnight",
+         y = "# checklists",
+         title = "Distribution of observation start times")
+  
+  # frequency of detection
+  g_tod_freq <- ggplot(ebird_tod %>% filter(n_checklists > 100)) +
+    aes(x = tod_bins, y = det_freq) +
+    geom_line() +
+    geom_point() +
+    scale_x_continuous(breaks = seq(0, 24, by = 3), limits = c(0, 24)) +
+    scale_y_continuous(labels = scales::percent) +
+    labs(x = "Hours since midnight",
+         y = "% checklists with detections",
+         title = "Detection frequency")
+  
+  # combine
+  grid.arrange(g_tod_hist, g_tod_freq)
+  dev.off()
+  
+  
+  # Checklist Duration
+  # summarize data by 30 minute bins
+  breaks <- seq(0, 5, by = 0.5)
+  labels <- breaks[-length(breaks)] + diff(breaks) / 2
+  ebird_dur <- ebird %>% 
+    mutate(dur_bins = cut(duration_minutes / 60, 
+                          breaks = breaks, 
+                          labels = labels,
+                          include.lowest = TRUE),
+           dur_bins = as.numeric(as.character(dur_bins))) %>% 
+    group_by(dur_bins) %>% 
+    summarise(n_checklists = n(),
+              n_detected = sum(species_observed),
+              det_freq = mean(species_observed))
+  
+  # histogram
+  pdf(file = file.path(data_folder, "analytics", sprintf("%s_effort_duration.pdf", short_code)))
+  g_dur_hist <- ggplot(ebird_dur) +
+    aes(x = dur_bins, y = n_checklists) +
+    geom_segment(aes(xend = dur_bins, y = 0, yend = n_checklists),
+                 color = "grey50") +
+    geom_point() +
+    scale_x_continuous(breaks = 0:5) +
+    scale_y_continuous(labels = scales::comma) +
+    labs(x = "Checklist duration (hours)",
+         y = "# checklists",
+         title = "Distribution of checklist durations")
+  
+  # frequency of detection
+  g_dur_freq <- ggplot(ebird_dur %>% filter(n_checklists > 100)) +
+    aes(x = dur_bins, y = det_freq) +
+    geom_line() +
+    geom_point() +
+    scale_x_continuous(breaks = 0:5) +
+    scale_y_continuous(labels = scales::percent) +
+    labs(x = "Checklist duration (hours)",
+         y = "% checklists with detections",
+         title = "Detection frequency")
+  
+  # combine
+  grid.arrange(g_dur_hist, g_dur_freq)
+  dev.off()
+  
+  
+  # Distance Traveled 
+  # summarize data by 500m bins
+  breaks <- seq(0, 5, by = 0.5)
+  labels <- breaks[-length(breaks)] + diff(breaks) / 2
+  ebird_dist <- ebird %>% 
+    mutate(dist_bins = cut(effort_distance_km, 
+                           breaks = breaks, 
+                           labels = labels,
+                           include.lowest = TRUE),
+           dist_bins = as.numeric(as.character(dist_bins))) %>% 
+    group_by(dist_bins) %>% 
+    summarise(n_checklists = n(),
+              n_detected = sum(species_observed),
+              det_freq = mean(species_observed))
+  
+  # histogram
+  pdf(file = file.path(data_folder, "analytics", sprintf("%s_effort_distance-travelled.pdf", short_code)))
+  g_dist_hist <- ggplot(ebird_dist) +
+    aes(x = dist_bins, y = n_checklists) +
+    geom_segment(aes(xend = dist_bins, y = 0, yend = n_checklists),
+                 color = "grey50") +
+    geom_point() +
+    scale_x_continuous(breaks = 0:5) +
+    scale_y_continuous(labels = scales::comma) +
+    labs(x = "Distance travelled (km)",
+         y = "# checklists",
+         title = "Distribution of distance travelled")
+  
+  # frequency of detection
+  g_dist_freq <- ggplot(ebird_dist %>% filter(n_checklists > 100)) +
+    aes(x = dist_bins, y = det_freq) +
+    geom_line() +
+    geom_point() +
+    scale_x_continuous(breaks = 0:5) +
+    scale_y_continuous(labels = scales::percent) +
+    labs(x = "Distance travelled (km)",
+         y = "% checklists with detections",
+         title = "Detection frequency")
+  
+  # combine
+  grid.arrange(g_dist_hist, g_dist_freq)
+  dev.off()
+  
+  # Since most walks are short, landcover neighborhoods at location will describe 
+  # habitat at sighting location well!
+  
+  
+  # Number of Observers 
+  # summarize data
+  breaks <- 0:10
+  labels <- 1:10
+  ebird_obs <- ebird %>% 
+    mutate(obs_bins = cut(number_observers, 
+                          breaks = breaks, 
+                          label = labels,
+                          include.lowest = TRUE),
+           obs_bins = as.numeric(as.character(obs_bins))) %>% 
+    group_by(obs_bins) %>% 
+    summarise(n_checklists = n(),
+              n_detected = sum(species_observed),
+              det_freq = mean(species_observed))
+  
+  # histogram
+  pdf(file = file.path(data_folder, "analytics", sprintf("%s_effort_number-of-observers.pdf", short_code)))
+  g_obs_hist <- ggplot(ebird_obs) +
+    aes(x = obs_bins, y = n_checklists) +
+    geom_segment(aes(xend = obs_bins, y = 0, yend = n_checklists),
+                 color = "grey50") +
+    geom_point() +
+    scale_x_continuous(breaks = 1:10) +
+    scale_y_continuous(labels = scales::comma) +
+    labs(x = "# observers",
+         y = "# checklists",
+         title = "Distribution of the number of observers")
+  
+  # frequency of detection
+  g_obs_freq <- ggplot(ebird_obs %>% filter(n_checklists > 100)) +
+    aes(x = obs_bins, y = det_freq) +
+    geom_line() +
+    geom_point() +
+    scale_x_continuous(breaks = 1:10) +
+    scale_y_continuous(labels = scales::percent) +
+    labs(x = "# observers",
+         y = "% checklists with detections",
+         title = "Detection frequency")
+  
+  # combine
+  grid.arrange(g_obs_hist, g_obs_freq)
+  dev.off()
+  
+  #### end ####
+  
+  
   # Clean up the directory 
   unlink(file.path(data_folder, "ebd_filtered_output.txt"))
   unlink(file.path(data_folder, "ebd_samp_filtered_output.txt"))
   unlink(file.path(data_folder, "modis"), recursive=TRUE)
-  
-  # Update the user on progress
-  sprintf("%s Preprocessing Completed", current_species$common_name)
-
 }
 
 
