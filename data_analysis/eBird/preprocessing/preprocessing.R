@@ -253,9 +253,6 @@ for (row in 1:nrow(species_data)){
   tiles <- getTile(gis_land)
   tiles@tile
   
-  # Load the eBird data
-  ebird <- read_csv(csv_name)
-  
   # Earliest/latest year of ebird data available
   begin_year <- format(min(ebird$observation_date), "%Y.01.01")
   end_year <- format(max(ebird$observation_date), "%Y.12.31")
