@@ -95,14 +95,14 @@ for (row in 1:nrow(species_data)){
     filter(!is.na(observation_count))
   
   # Load covariate data
-  covariate_data <- read_csv(file.path(data_folder, "input data", sprintf("%s_landcover_elevation_and_pressure_checklists.csv", short_code))) %>% 
+  covariate_data <- read_csv(file.path(data_folder, "input data", sprintf("%s_covariate_checklists.csv", short_code))) %>% 
     mutate(year = as.integer(year))
   
   # Combine eBird and covariate data 
   checklist_data <- inner_join(ebird_data, covariate_data, by = c("locality_id", "year"))
   
   # Load prediction surface covariate data
-  pred_covariate_data <- read_csv(file.path(data_folder, "input data", sprintf("%s_landcover_elevation_and_pressure_prediction.csv", short_code)))
+  pred_covariate_data <- read_csv(file.path(data_folder, "input data", sprintf("%s_covariate_predictions.csv", short_code)))
   
   # Load prediction area raster
   pred_raster <- raster(file.path(data_folder, "input data", sprintf("%s_prediction-surface.tif", short_code)))

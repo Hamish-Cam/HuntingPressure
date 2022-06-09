@@ -37,7 +37,7 @@ non_hunted_species <- data.frame(c("Banded Bay Cuckoo", "Cacomantis sonneratii")
 selected_species <- non_hunted_species
 
 # Selection of non-habitat variables to include in the advanced model 
-non_habitat_covariates <- c("hunting_mean")   
+non_habitat_covariates <- c("hunting_mean", "access_mean")   
 
 # Name of the folder that contains input data folder
 data_folder <- "data"
