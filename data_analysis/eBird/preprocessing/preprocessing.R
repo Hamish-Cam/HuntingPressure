@@ -647,7 +647,7 @@ for (row in 1:nrow(species_data)){
   plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
        ylim = st_bbox(species_range)[c(2,4)], main=t)
   plot(species_range, add=TRUE, border='black')
-  plot(mean_hunting_pressure, add=TRUE, col = viridis(10))
+  plot(mean_hunting_pressure, add=TRUE, col = plasma(10))
   plot(ne_country_lines, add=TRUE)
   dev.off()
   
@@ -676,16 +676,18 @@ for (row in 1:nrow(species_data)){
   # Extract mean time to city of more than 50,000 people within neighbourhood 
   locs <- st_set_geometry(ebird_buff_noyear, NULL) %>% 
     mutate(id = row_number())
-  access_checklists <- exact_extract(access, ebird_buff_noyear, progress = FALSE) %>% 
-    map_dfr(~ tibble(access_mean = mean(.$value, na.rm = TRUE))) %>% 
+  access_checklists <- exact_extract(access, ebird_buff_noyear, progress = FALSE, 'mean') %>% 
     # join to lookup table to get locality_id
-    bind_cols(locs, .) 
+    bind_cols(locs, .) %>%
+    # Rename columns 
+    rename(access_mean = ...3) 
   
   # Extract mean value for prediction surface also
-  access_pred <- exact_extract(access, r_cells, progress = FALSE) %>% 
-    map_dfr(~ tibble(access_mean = mean(.$value, na.rm = TRUE))) %>% 
+  access_pred <- exact_extract(access, r_cells, progress = FALSE, 'mean') %>% 
     # join to lookup table to get locality_id
-    bind_cols(st_drop_geometry(r_cells), .) 
+    bind_cols(st_drop_geometry(r_cells), .) %>%
+    # Rename columns 
+    rename(access_mean = ...2) 
   
   # Join the accessibility data with the rest of the covariate data
   covariate_checklists <- inner_join(pland_elev_pressure_checklist, access_checklists, by = "locality_id")
@@ -696,13 +698,16 @@ for (row in 1:nrow(species_data)){
   # Get problem checklists from covariate data
   problem_checklists <- covariate_checklists[is.na(covariate_checklists$access_mean), c("locality_id","access_mean")]
   
-  # For each problem checklist, remove any checklists at that location entirely
-  for (row in 1:nrow(problem_checklists)){
-    problem_location <- problem_checklists[row,]
-    # Remove problem entries in covariate data
-    covariate_checklists <- filter(covariate_checklists, locality_id != problem_location$locality_id)
-    # Remove problem entries in ebird data
-    ebird <- filter(ebird, locality_id != problem_location$locality_id)
+  # Check that we actually have some problem checklists
+  if(nrow(problem_checklists) != 0){
+    # For each problem checklist, remove any checklists at that location entirely
+    for (row in 1:nrow(problem_checklists)){
+      problem_location <- problem_checklists[row,]
+      # Remove problem entries in covariate data
+      covariate_checklists <- filter(covariate_checklists, locality_id != problem_location$locality_id)
+      # Remove problem entries in ebird data
+      ebird <- filter(ebird, locality_id != problem_location$locality_id)
+    }
   }
   
   # For prediction points - interpolate missing data using nearest valid neighbour's value.
@@ -714,17 +719,20 @@ for (row in 1:nrow(species_data)){
   valid_preds <- covariate_preds[!is.na(covariate_preds$access_mean), c("latitude","longitude","access_mean")]
   valid_preds <- st_as_sf(valid_preds, coords = c("longitude", "latitude"), crs=4326)
   
-  # For each problem point, find its nearest valid neighbour and use its accessibility value
-  for (row in 1:nrow(problem_preds)){
-    problem_pred <- problem_preds[row,]
-    # Find distances to each valid row
-    distances <- st_distance(problem_pred[c("geometry","access_mean")], valid_preds)
-    # Get the index of the closest point
-    index_min <- which.min(distances)
-    # Get accessibility at this closest point
-    new_access <- st_drop_geometry(valid_preds[index_min,"access_mean"])
-    # Save this value as the new value of the corresponding problem checklist
-    covariate_preds[covariate_preds$id == problem_pred$id, "access_mean"] <- new_access
+  # Check that we actually have some problem prediction points
+  if(nrow(problem_preds) != 0){
+    # For each problem point, find its nearest valid neighbour and use its accessibility value
+    for (row in 1:nrow(problem_preds)){
+      problem_pred <- problem_preds[row,]
+      # Find distances to each valid row
+      distances <- st_distance(problem_pred[c("geometry","access_mean")], valid_preds)
+      # Get the index of the closest point
+      index_min <- which.min(distances)
+      # Get accessibility at this closest point
+      new_access <- st_drop_geometry(valid_preds[index_min,"access_mean"])
+      # Save this value as the new value of the corresponding problem checklist
+      covariate_preds[covariate_preds$id == problem_pred$id, "access_mean"] <- new_access
+    }
   }
   
   # Save the updated covariate data
