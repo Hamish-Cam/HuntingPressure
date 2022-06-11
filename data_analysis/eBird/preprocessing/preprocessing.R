@@ -79,7 +79,8 @@ for (row in 1:nrow(species_data)){
   range_query <- paste('SELECT * FROM "All_Species" WHERE sci_name = \'', 
                        current_species$scientific_name_IUCN, '\'', sep='')
   species_range <- st_read(dsn=file.path(perm_files_location, "BOTW.gdb"), query = range_query)
-
+  #species_range <- read_sf(file.path("~/Desktop", "grehor1_gis-data.gpkg"), "range")
+  
   # Get range polygon corresponding to extant, native and resident row
   species_range <- filter(species_range, presence==1, origin==1, seasonal==1) %>%
                       select(Shape)
@@ -94,7 +95,7 @@ for (row in 1:nrow(species_data)){
   }
   
   # Add a buffer of 100km around the inexact range polygon to allow for error
-  species_range <- st_buffer(species_range, 100000)
+  species_range <- st_buffer(species_range, 10000)
   
   # Limit this extended range to that only within the country of study
   country_boundary <- ne_countries(country = country, scale = 50) %>%
@@ -199,14 +200,11 @@ for (row in 1:nrow(species_data)){
       observation_count = if_else(observation_count == "X", 
                                   NA_character_, observation_count),
       observation_count = as.integer(observation_count),
-      
       # convert effort_distance_km to 0 for non-travelling counts
       effort_distance_km = if_else(protocol_type != "Traveling", 
                                    0, effort_distance_km),
-      
       # convert time to decimal hours using our function
       time_observations_started = time_to_decimal(time_observations_started),
-      
       # split date into year and day of year
       year = year(observation_date),
       day_of_year = yday(observation_date)
@@ -241,46 +239,62 @@ for (row in 1:nrow(species_data)){
   #### end ####
   
   
+  #### (Optional) MODIS Landcover Download ####
+  
+  # Source: https://lpdaac.usgs.gov/products/mcd12q1v006/
+  # Run this section of code to get up to date landcover data or tiles for a region != Thailand
+  
+  # # Read the GIS boundary chosen in the previous section
+  # gis_land <- read_sf(f_ne, "range") %>%
+  #   # project to the native modis projection
+  #   st_transform(crs = paste("+proj=sinu +lon_0=0 +x_0=0 +y_0=0",
+  #                            "+a=6371007.181 +b=6371007.181 +units=m +no_defs"))
+  # 
+  # # Get (and print) list of MODIS tiles required to cover this region
+  # tiles <- getTile(gis_land)
+  # tiles@tile
+  # 
+  # # Earliest/latest year of ebird data available
+  # begin_year <- format(min(ebird$observation_date), "%Y.01.01")
+  # end_year <- format(max(ebird$observation_date), "%Y.12.31")
+  # 
+  # # Store credentials for accessing MODIS data and test connection
+  # MODIS::EarthdataLogin(usr = username, pwd = password)
+  # MODISoptions(check_earthdata_login = TRUE)
+  # 
+  # # Download tiles for area of interest and combine into a single raster for each year
+  # # then save into subfolder 'modis'
+  # tifs <- runGdal(product = "MCD12Q1", collection = "006", SDSstring = "01",
+  #                 extent = gis_land %>% st_buffer(dist = 10000),
+  #                 begin = begin_year, end = end_year,
+  #                 outDirPath = data_folder, job = "modis",
+  #                 MODISserverOrder = "LPDAAC") %>%
+  #   pluck("MCD12Q1.006") %>%
+  #   unlist()
+  # 
+  # # Rename tifs to have more descriptive names
+  # new_names <- format(as.Date(names(tifs)), "%Y") %>%
+  #   sprintf("modis_mcd12q1_umd_%s.tif", .) %>%
+  #   file.path(dirname(tifs), .)
+  # file.rename(tifs, new_names)
+  # 
+  # # Now move modis tiles to permanent files location
+  # dir.create(file.path(perm_files_location, "modis"))
+  # file.copy(from=file.path(data_folder,"modis"), to=perm_files_location, overwrite = TRUE, recursive = TRUE)
+  # unlink(file.path(data_folder,"modis"), recursive=TRUE)
+  
+  #### end ####
+  
   #### MODIS Landcover Data ####
   
-  # Read the GIS boundary chosen in the previous section
+  # Read the GIS boundary chosen in the previous sections
   gis_land <- read_sf(f_ne, "range") %>% 
     # project to the native modis projection
     st_transform(crs = paste("+proj=sinu +lon_0=0 +x_0=0 +y_0=0",
                              "+a=6371007.181 +b=6371007.181 +units=m +no_defs"))
   
-  # Get (and print) list of MODIS tiles required to cover this region
-  tiles <- getTile(gis_land)
-  tiles@tile
-  
-  # Earliest/latest year of ebird data available
-  begin_year <- format(min(ebird$observation_date), "%Y.01.01")
-  end_year <- format(max(ebird$observation_date), "%Y.12.31")
-  
-  # Store credentials for accessing MODIS data and test connection
-  MODIS::EarthdataLogin(usr = username, pwd = password)
-  MODISoptions(check_earthdata_login = TRUE)
-  
-  # Download tiles for area of interest and combine into a single raster for each year
-  # then save into subfolder 'modis'
-  if (!dir.exists(file.path(data_folder, "modis"))) {
-    tifs <- runGdal(product = "MCD12Q1", collection = "006", SDSstring = "01", 
-                    extent = gis_land %>% st_buffer(dist = 10000), 
-                    begin = begin_year, end = end_year, 
-                    outDirPath = data_folder, job = "modis",
-                    MODISserverOrder = "LPDAAC") %>% 
-      pluck("MCD12Q1.006") %>% 
-      unlist()
-  }
-  
-  # Rename tifs to have more descriptive names
-  new_names <- format(as.Date(names(tifs)), "%Y") %>% 
-    sprintf("modis_mcd12q1_umd_%s.tif", .) %>% 
-    file.path(dirname(tifs), .)
-  file.rename(tifs, new_names)
-  
   # Load the landcover data into R as a single object, each year as a layer
-  landcover <- list.files(file.path(data_folder, "modis"), "^modis_mcd12q1_umd", 
+  landcover <- list.files(file.path(perm_files_location, "modis"), "^modis_mcd12q1_umd", 
                           full.names = TRUE) %>% 
     stack()
   
@@ -312,21 +326,16 @@ for (row in 1:nrow(species_data)){
     # Consider distinct checklists
     distinct(year = format(observation_date, "%Y"),
              locality_id, latitude, longitude) %>% 
-    
     # For years not available, use max we have for landcover data. Add lc year being used
     mutate(year_lc = if_else(as.integer(year) > max_lc_year, 
                              as.character(max_lc_year), year),
            year_lc = paste0("y", year_lc)) %>% 
-    
     # Convert location to spatial features
     st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
-    
     # Transform to modis projection
     st_transform(crs = projection(landcover)) %>% 
-    
     # Buffer to create neighborhood around each point
     st_buffer(dist = neighborhood_radius) %>% 
-    
     # Nest by year to match of with lc data
     nest(data = c(year, locality_id, geometry))
   
@@ -647,8 +656,8 @@ for (row in 1:nrow(species_data)){
   
   #### Accessibility Data ####
   
-  # Data download from: https://forobs.jrc.ec.europa.eu/products/gam/download.php
-  access <- raster(file.path(perm_files_location, "acc_50k.tif"))
+  # Data download from: https://malariaatlas.org/research-project/accessibility-to-cities/
+  access <- raster(file.path(perm_files_location, "2015_accessibility_to_cities_v1.0.tif"))
   
   # crop and buffer prediction region by 10 km to provide a little wiggle room
   access <- gis_land %>% 
@@ -744,10 +753,10 @@ for (row in 1:nrow(species_data)){
   pdf(file = file.path(data_folder, "analytics", sprintf("%s_accessibility_map.pdf", short_code)))
   par(mar = c(3,3,2,5))
   t <- str_glue("Mean Accessibility Values (mins)")
-  plot(ne_land, axes=TRUE, xlim = st_bbox(species_range)[c(1,3)], 
-       ylim = st_bbox(species_range)[c(2,4)], main=t)
+  plot(ne_land, axes=TRUE, xlim = c(95,107), 
+       ylim = c(5,20), main=t)
   plot(species_range, add=TRUE, border='black')
-  plot(access, add = TRUE, col = viridis(6), main = t)
+  plot(access, add = TRUE, col = viridis(10), main = t)
   plot(ne_country_lines, add=TRUE)
   dev.off()
   
@@ -781,7 +790,7 @@ for (row in 1:nrow(species_data)){
        add = TRUE)
   
   # Add a legend and title
-  legend("bottomleft", bty = "n",
+  legend("bottomright", bty = "n",
          col = c("#555555", "#4daf4a"),
          legend = c("eBird checklists", paste(current_species$common_name, "sightings")),
          pch = 19)
@@ -975,7 +984,6 @@ for (row in 1:nrow(species_data)){
   # Clean up the directory 
   unlink(file.path(data_folder, "ebd_filtered_output.txt"))
   unlink(file.path(data_folder, "ebd_samp_filtered_output.txt"))
-  unlink(file.path(data_folder, "modis"), recursive=TRUE)
 }
 
 
