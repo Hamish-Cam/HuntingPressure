@@ -95,7 +95,7 @@ for (row in 1:nrow(species_data)){
   }
   
   # Add a buffer of 100km around the inexact range polygon to allow for error
-  species_range <- st_buffer(species_range, 10000)
+  species_range <- st_buffer(species_range, 30000)
   
   # Limit this extended range to that only within the country of study
   country_boundary <- ne_countries(country = country, scale = 50) %>%
