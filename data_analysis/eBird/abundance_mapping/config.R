@@ -34,7 +34,7 @@ non_hunted_species <- data.frame(c("Banded Bay Cuckoo", "Cacomantis sonneratii")
 ################ Parameters ######################
 
 # Specify whether to use the hunted or non-hunted species sets
-selected_species <- non_hunted_species
+selected_species <- hunted_species
 
 # Selection of non-habitat variables to include in the advanced model 
 non_habitat_covariates <- c("hunting_mean", "access_mean")   
