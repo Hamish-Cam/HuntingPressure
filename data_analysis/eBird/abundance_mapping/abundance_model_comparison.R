@@ -47,14 +47,14 @@ habitat_covariates <- c("elevation_median",
                         "pland_09_savanna", 
                         "pland_10_grassland", 
                         "pland_11_wetland", 
-                        "pland_12_cropland", 
+                        "pland_12_cropland",
                         "pland_13_urban", 
                         "pland_14_mosiac")
 
 # Setup dataframes for storing the relevant model performance metrics
 spearman_ranks <- data.frame(species=c(), baseline=c(), advanced=c())
 mad_ranks <- data.frame(species=c(), baseline=c(), advanced=c())
-deviance_ranks <- data.frame(species=c(), deviance_diff=c())
+deviance_ranks <- data.frame(species=c(), deviance_diff=c(), p_value=c())
 
 
 #### Taxonomic Data ####
@@ -261,11 +261,12 @@ for (row in 1:nrow(species_data)){
   
   # Find the percentage difference in deviance explained by the models 
   metric_deviance <- (summary(NB_adv_model)$dev.expl - summary(NB_baseline_model)$dev.expl)*100
+  metric_p_value <- anova(NB_baseline_model, NB_adv_model, test = 'F')[2,'Pr(>Chi)']
   
   # Append the results to the relevant tables 
   spearman_ranks <- rbind(spearman_ranks, c(current_species$common_name, t(metric_spearman$rank_cor)))
   mad_ranks <- rbind(mad_ranks, c(current_species$common_name, t(metric_mad$mad)))
-  deviance_ranks <- rbind(deviance_ranks, c(current_species$common_name, metric_deviance))
+  deviance_ranks <- rbind(deviance_ranks, c(current_species$common_name, metric_deviance, metric_p_value))
   
   
   #### end #### 
@@ -610,14 +611,15 @@ for (row in 1:nrow(species_data)){
 # Rename the columns of the dataframes containing the metrics 
 colnames(spearman_ranks) <- c("Species", "Baseline", "Advanced")
 colnames(mad_ranks) <- c("Species", "Baseline", "Advanced")
-colnames(deviance_ranks) <- c("Species", "Deviance_diff")
+colnames(deviance_ranks) <- c("Species", "Deviance_diff", "p-value")
 
 # Append the mean values to the end of each column 
 spearman_ranks <- rbind(spearman_ranks, c("Mean", 
                       mean(as.numeric(spearman_ranks$Baseline)), mean(as.numeric(spearman_ranks$Advanced))))
 mad_ranks <- rbind(mad_ranks, c("Mean", 
                   mean(as.numeric(mad_ranks$Baseline)), mean(as.numeric(mad_ranks$Advanced))))
-deviance_ranks <- rbind(deviance_ranks, c("Mean", mean(as.numeric(deviance_ranks$Deviance_diff))))
+deviance_ranks <- rbind(deviance_ranks, c("Mean", 
+                  mean(as.numeric(deviance_ranks$Deviance_diff)), mean(as.numeric(deviance_ranks$'p-value'))))
 
 # Save the performance metrics to the analytics folder 
 write.csv(spearman_ranks, file.path(data_folder, "analytics", "spearman_ranks.csv"), row.names = FALSE)
