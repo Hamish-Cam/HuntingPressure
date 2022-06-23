@@ -54,6 +54,7 @@ habitat_covariates <- c("elevation_median",
 # Setup dataframes for storing the relevant model performance metrics
 spearman_ranks <- data.frame(species=c(), baseline=c(), advanced=c())
 mad_ranks <- data.frame(species=c(), baseline=c(), advanced=c())
+deviance_ranks <- data.frame(species=c(), deviance_diff=c())
 
 
 #### Taxonomic Data ####
@@ -138,26 +139,24 @@ for (row in 1:nrow(species_data)){
     ungroup() %>% 
     select(-cell, -week)
   
+  # Now split the data into training and testing sections
+  split_data <- checklist_data_ss %>% 
+      split(if_else(runif(nrow(.)) <= train_prop, "train", "test"))
+  
   #### end ####
   
   
   #### Baseline Model Fit ####
   
   # Keep only the data to be used in the model
-  baseline_model_data <- checklist_data_ss %>% 
-    select(observation_count,
-           # Effort covariates
-           day_of_year, time_observations_started, duration_minutes,
-           effort_distance_km, number_observers, protocol_type,
-           # Habitat covariates
-           habitat_covariates)
-  
-  # Split the model data into a testing and training set
-  baseline_model_data <- baseline_model_data %>% 
-    split(if_else(runif(nrow(.)) <= train_prop, "train", "test"))
-  
-  # Print number of datapoints in each set
-  map_int(baseline_model_data, nrow)
+  baseline_model_data <- lapply(split_data, 
+                                function(x) select(x,
+                                   observation_count,
+                                   # Effort covariates
+                                   day_of_year, time_observations_started, duration_minutes,
+                                   effort_distance_km, number_observers, protocol_type,
+                                   # Habitat covariates
+                                   habitat_covariates))
   
   # Get names of continuous covariates 
   continuous_covs <- baseline_model_data$train %>% 
@@ -189,22 +188,16 @@ for (row in 1:nrow(species_data)){
   #### Advanced Model Fit ####
   
   # Keep only the data to be used in the model
-  adv_model_data <- checklist_data_ss %>% 
-    select(observation_count,
-           # Effort covariates
-           day_of_year, time_observations_started, duration_minutes,
-           effort_distance_km, number_observers, protocol_type,
-           # Habitat covariates
-           habitat_covariates, 
-           # Non-habitat covariates 
-           non_habitat_covariates) 
-  
-  # Split the model data into a testing and training set
-  adv_model_data <- adv_model_data %>% 
-    split(if_else(runif(nrow(.)) <= train_prop, "train", "test"))
-  
-  # Print number of datapoints in each set
-  map_int(adv_model_data, nrow)
+  adv_model_data <- lapply(split_data, 
+                                function(x) select(x,
+                                   observation_count,
+                                   # Effort covariates
+                                   day_of_year, time_observations_started, duration_minutes,
+                                   effort_distance_km, number_observers, protocol_type,
+                                   # Habitat covariates
+                                   habitat_covariates, 
+                                   # Non-habitat covariates 
+                                   non_habitat_covariates))
   
   # Get names of continuous covariates 
   continuous_covs <- adv_model_data$train %>% 
@@ -266,9 +259,13 @@ for (row in 1:nrow(species_data)){
                 summarise(mad = mean(abs(obs - pred), na.rm = TRUE)) %>% 
                 ungroup()
   
+  # Find the percentage difference in deviance explained by the models 
+  metric_deviance <- (summary(NB_adv_model)$dev.expl - summary(NB_baseline_model)$dev.expl)*100
+  
   # Append the results to the relevant tables 
   spearman_ranks <- rbind(spearman_ranks, c(current_species$common_name, t(metric_spearman$rank_cor)))
   mad_ranks <- rbind(mad_ranks, c(current_species$common_name, t(metric_mad$mad)))
+  deviance_ranks <- rbind(deviance_ranks, c(current_species$common_name, metric_deviance))
   
   
   #### end #### 
@@ -326,7 +323,6 @@ for (row in 1:nrow(species_data)){
   t_peak <- pred_tod$time_observations_started[which.max(pred_tod$pred_lcl)]
   
   # Plot the findings to illustrate the result 
-  pdf(file = file.path(data_folder, "analytics", sprintf("%s_baseline_optimal_time_of_day.pdf", short_code)))
   ggplot(pred_tod) +
     aes(x = time_observations_started, y = pred,
         ymin = pred_lcl, ymax = pred_ucl) +
@@ -337,9 +333,9 @@ for (row in 1:nrow(species_data)){
          y = "Predicted relative abundance",
          title = paste("Effect of observation start time on", current_species$common_name, "reporting"),
          subtitle = "Peak detectability shown as dashed blue line")
-  dev.off()
+  ggsave(file = file.path(data_folder, "analytics", sprintf("%s_baseline_optimal_time_of_day.pdf", short_code)))
     
-    
+  
   ## Abundance maps 
   # Add effort covariates to those already have
   pred_covariate_effort_data <- pred_covariate_data %>% 
@@ -486,7 +482,6 @@ for (row in 1:nrow(species_data)){
   t_peak <- pred_tod$time_observations_started[which.max(pred_tod$pred_lcl)]
   
   # Plot the findings to illustrate the result 
-  pdf(file = file.path(data_folder, "analytics", sprintf("%s_advanced_optimal_time_of_day.pdf", short_code)))
   ggplot(pred_tod) +
     aes(x = time_observations_started, y = pred,
         ymin = pred_lcl, ymax = pred_ucl) +
@@ -497,7 +492,7 @@ for (row in 1:nrow(species_data)){
          y = "Predicted relative abundance",
          title = paste("Effect of observation start time on", current_species$common_name, "reporting"),
          subtitle = "Peak detectability shown as dashed blue line")
-  dev.off()
+  ggsave(file = file.path(data_folder, "analytics", sprintf("%s_advanced_optimal_time_of_day.pdf", short_code)))
   
   
   ## Abundance maps 
@@ -615,16 +610,19 @@ for (row in 1:nrow(species_data)){
 # Rename the columns of the dataframes containing the metrics 
 colnames(spearman_ranks) <- c("Species", "Baseline", "Advanced")
 colnames(mad_ranks) <- c("Species", "Baseline", "Advanced")
+colnames(deviance_ranks) <- c("Species", "Deviance_diff")
 
 # Append the mean values to the end of each column 
 spearman_ranks <- rbind(spearman_ranks, c("Mean", 
                       mean(as.numeric(spearman_ranks$Baseline)), mean(as.numeric(spearman_ranks$Advanced))))
 mad_ranks <- rbind(mad_ranks, c("Mean", 
                   mean(as.numeric(mad_ranks$Baseline)), mean(as.numeric(mad_ranks$Advanced))))
+deviance_ranks <- rbind(deviance_ranks, c("Mean", mean(as.numeric(deviance_ranks$Deviance_diff))))
 
 # Save the performance metrics to the analytics folder 
 write.csv(spearman_ranks, file.path(data_folder, "analytics", "spearman_ranks.csv"), row.names = FALSE)
 write.csv(mad_ranks, file.path(data_folder, "analytics", "mad_ranks.csv"), row.names = FALSE)
+write.csv(deviance_ranks, file.path(data_folder, "analytics", "deviance_ranks.csv"), row.names = FALSE)
 
 
 
