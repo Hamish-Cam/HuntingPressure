@@ -289,7 +289,6 @@ for (row in 1:nrow(species_data)){
        xlab = "Observed non-zero count")
   dev.off()
   
-  
   ## Optimal time of day for observations  
   # Get latest year of landcover data available 
   max_lc_year <- pred_covariate_data$year[1]
@@ -495,6 +494,37 @@ for (row in 1:nrow(species_data)){
          subtitle = "Peak detectability shown as dashed blue line")
   ggsave(file = file.path(data_folder, "analytics", sprintf("%s_advanced_optimal_time_of_day.pdf", short_code)))
   
+  
+  ## Plot predictor effect on relative abundance predictions
+  # Make a function
+  plot_gam <- function(m, predictor, title = NULL) {
+    p <- plot(m, pages = 1)
+    
+    # extract data
+    p_df <- map_df(p, ~ tibble(cov = rep(.$xlab, length(.$x)),
+                               x = .$x, fit = .$fit, se = .$se))
+    p_df <- p_df[p_df$cov == predictor,]
+    
+    # plot
+    g <- ggplot(p_df) +
+      aes(x = x, y = fit,
+          ymin = fit - se, ymax = fit + se) +
+      geom_ribbon(fill = "grey80") +
+      geom_line(col = "blue") +
+      facet_wrap(~ cov, scales = "free_x") +
+      labs(x = "Predictor Value",
+           y = "Smooth function") +
+      geom_rug(data=checklist_data_ss, aes_string(x = predictor), 
+               inherit.aes = FALSE)
+    print(g)
+    invisible(p_df)
+    ggsave(file = file.path(data_folder, "analytics", sprintf("%s_%s_effect.pdf", short_code, predictor)))
+  }
+  
+  # Plot for each non-habitat predictor 
+  for (predictor in non_habitat_covariates){
+    plot_gam(NB_adv_model, predictor=predictor)
+  }
   
   ## Abundance maps 
   # Add effort covariates to those already have
