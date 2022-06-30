@@ -79,7 +79,6 @@ for (row in 1:nrow(species_data)){
   range_query <- paste('SELECT * FROM "All_Species" WHERE sci_name = \'', 
                        current_species$scientific_name_IUCN, '\'', sep='')
   species_range <- st_read(dsn=file.path(perm_files_location, "BOTW.gdb"), query = range_query)
-  #species_range <- read_sf(file.path("~/Desktop", "grehor1_gis-data.gpkg"), "range")
   
   # Get range polygon corresponding to extant, native and resident row
   species_range <- filter(species_range, presence==1, origin==1, seasonal==1) %>%
@@ -242,7 +241,8 @@ for (row in 1:nrow(species_data)){
   #### (Optional) MODIS Landcover Download ####
   
   # Source: https://lpdaac.usgs.gov/products/mcd12q1v006/
-  # Run this section of code to get up to date landcover data or tiles for a region != Thailand
+  # Run this section of code to get up to date landcover data or tiles for a region != Thailand.
+  # Note: you will need an Earthdata login
   
   # # Read the GIS boundary chosen in the previous section
   # gis_land <- read_sf(f_ne, "range") %>%
@@ -259,7 +259,7 @@ for (row in 1:nrow(species_data)){
   # end_year <- format(max(ebird$observation_date), "%Y.12.31")
   # 
   # # Store credentials for accessing MODIS data and test connection
-  # MODIS::EarthdataLogin(usr = username, pwd = password)
+  # MODIS::EarthdataLogin(usr = "username", pwd = "password")
   # MODISoptions(check_earthdata_login = TRUE)
   # 
   # # Download tiles for area of interest and combine into a single raster for each year

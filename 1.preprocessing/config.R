@@ -1,7 +1,9 @@
+# Hamish Campbell
+
 # Config script for 'preprocessing.R'
 
 
-################ Species Sets ######################
+#### Study Species ####
 
 # Specify the sets of hunted and non-hunted species used for analysis
 # Entries must be in the form:
@@ -28,20 +30,16 @@ non_hunted_species <- data.frame(c("Banded Bay Cuckoo", "Cacomantis sonneratii")
                                  c("Sooty-headed Bulbul",	"Pycnonotus aurigaster"),
                                  c("Common Tailorbird",	"Orthotomus sutorius"))
 
-################ end ######################
+#### end ####
 
 
-################ Parameters ######################
+#### Parameters ####
 
 # Specify whether to use the hunted or non-hunted species sets
 selected_species <- non_hunted_species
 
 # Country of study (within SE Asia)
 country <- "Thailand"
-
-# Earthdata login credentials
-username = "hrac2"
-password = "mQ5taFmenGs9oHS"
 
 # Name of the folder that contains input data folder for species specific data
 data_folder <- "data"
@@ -53,4 +51,4 @@ perm_files_location <- "~/hunting_data"
 sampling_data <- "ebd_sampling_relApr-2022.txt"
 
 
-################ end ######################
+#### end ####
