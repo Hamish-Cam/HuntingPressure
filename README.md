@@ -3,8 +3,8 @@
  [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
  <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
-[<img align="right" src=figures/logos/ai4er.png width=47px>](https://ai4er-cdt.esc.cam.ac.uk/)
-[<img align="right" src=figures/logos/UoC_logo.jpeg width=60px>](https://www.cam.ac.uk/)
+[<img align="right" src=figures/logos/ai4er_logo.png width=47px>](https://ai4er-cdt.esc.cam.ac.uk/)
+[<img align="right" src=figures/logos/UoC_logo.jpeg width=90px>](https://www.cam.ac.uk/)
 
 In each section of code contained within this repository, README files are provided that outline instructions for installing and using the relevant pieces of software for replicating and building on results found in this project. For replication, exact datasets can be found [here](https://doi.org/10.5281/zenodo.%20%20%206761830). All code has been written in R, the industry standard language for species distribution modelling. A large proportion of the code contained within this repository has been based upon research completed by the [Cornell Lab of Ornithology](https://cornelllabofornithology.github.io/ebird-best-practices/).
 
@@ -35,7 +35,7 @@ If the additional predictors are a suitable proxy for hunting, we predict that t
 #### 4.1.1 eBird Checklist Data
 For bird occurrence information, eBird checklist data is used. In addition to presence observations of a given target species, an additional sampling event data file was obtained, allowing the checklist data to be zero-filled. Citizen science data is commonly susceptible to various spatial and temporal biases [72, 46]. For example, users tend to submit more records near cities and on the weekends. To reduce the impact of these. biases, the eBird data was sub-sampled, keeping just one checklist per week in each 5km grid cell covering For bird occurrence information, eBird checklist data is used. In addition to presence observations of a Thailand. Additionally, the dataset was also filtered to remove outliers, such that unusual outings do not impact greatly on model performance. Only short checklists (less than 5 hours and 5km), after 2010, are considered in this project. An example map of eBird checklist observations taken within Thailand, for the Great Hornbill, is shown in Figure 3.3
 
-![Approach Overview](figures/checklist_map.pdf?raw=true "Map of Great Hornbill eBird observations.")
+![Approach Overview](figures/checklist_map.png?raw=true "Map of Great Hornbill eBird observations.")
 *Figure 2 - An example map of eBird checklist observations taken within Thailand, for the Great Hornbill.*
 
 #### 4.1.2 Range Polygons
@@ -48,26 +48,26 @@ To limit the area over which training and testing checklists are sampled from, w
 #### 4.2.1 Landcover Classification Data 
 Landcover type is an important habitat predictor of species abundance, since it provides information about the habitat types available to a species. Annual landcover data was obtained from NASA, who make use of MODIS satellite observations and classification algorithms, to categorise 1km pixels into one of 16 possible landcover types [64] - following the University of Maryland (UMD) classification scheme [74]. However, the habitat found at a single point does not provide useful information for predicting species abundance. The habitat present within the 5km region around checklist locations was determined by calculating the proportion of each landcover type. A diameter of 5km is appropriate given the checklist distance limit imposed on the eBird data, while still being a suitable ecological scale for analysing many bird species [52]. A map of neighbourhood landcover proportions, for urban areas, can be seen in Figure 3.5a.
 
-![Approach Overview](figures/urban_landdcover.pdf?raw=true "Urban coverage across Thailand 2020.")
+![Approach Overview](figures/urban_landdcover.png?raw=true "Urban coverage across Thailand 2020.")
 *Figure 4 - A map of neighbourhood landcover proportions within Thailand, for urban areas, in 2020.*
 
 #### 4.2.2 Elevation Data
 Elevation is an important habitat factor for determining species distributions [75]. A global map of elevation data, at a 1km resolution, was obtained from Amatulli et al. [76]. The median elevation within each checklist neighbourhood was calculated, to provide an additional environmental predictor for the models. Figure 3.5b shows a plot of elevation across Thailand, obtained using this method.
 
-![Approach Overview](figures/elevation_map.pdf?raw=true "Elevation map of Thailand.")
+![Approach Overview](figures/elevation_map.png?raw=true "Elevation map of Thailand.")
 *Figure 5 - A map of elevation values across Thailand.*
 
 ### 4.3 Non-Habitat Predictors 
 #### 4.3.1 Harfoot Pressure Maps 
 One possible predictor of H&T is the global hunting pressure map for birds developed by Harfoot et al. [1], which is shown in Figure 3.6a. Harfoot uses range polygons and threat information contained within the IUCN Red List, in combination with a statistical model, to derive the probability of a species, within a given 50km pixel, being under threat from H&T. Modelling data was collected by calculating the weighted mean value of hunting pressure within each 5km checklist neighbourhood. Figure 3.6b shows the result of this process for Thailand.
 
-![Approach Overview](figures/harfoot_map.png?raw=true "Harfoot pressure maps.")
+![Approach Overview](figures/harfoot_maps.png?raw=true "Harfoot pressure maps.")
 *Figure 6 - Harfoot hunting pressure for birds, globally, and restricted to Thailand.*
 
 #### 4.3.2 Accessibility 
 Weiss et al. [77] developed a map of global accessibility, at 1km resolution - where accessibility is defined as the minimum travel time to an urban area of more than 50,000 people. Figure 3.7 shows accessibility values across Thailand for this dataset. Despite the difficulties in stating a causal relationship, accessibility provides a useful predictor of hunting pressure and a valuable sanity check for the outlined approach - since the relationship between hunting pressure and accessibility has been studied previously [36, 26].
 
-![Approach Overview](figures/access_map.pdf?raw=true "Accessibility map within Thailand")
+![Approach Overview](figures/access_map.png?raw=true "Accessibility map within Thailand")
 *Figure 7 - Minimum travel time to an urban area of >50,000 people (minutes).*
 
 ## 5 - Models
@@ -90,7 +90,7 @@ Considering goodness-of-fit, the Harfoot pressure maps produced non-coherent res
 
 The accessibility dataset, however, appears to show more coherent results for the hunted species group - suggesting the improvement in deviance explained can be trusted to a greater extent. According to this metric, the addition of the accessibility predictor showed approximately a two-fold improvement between partitioned groups. Despite the notable relative improvement, the absolute improvement remains small (0.256%) - providing a possible explanation as to why the prediction accuracy metrics do not show significant improvement between models. We conclude that the addition of accessibility, as a proxy indicator of hunting pressure, does improve model goodness-of-fit, however, the performance gain for prediction is negligible. This may partially be due to accessibility being a confounder - also influencing habitat through factors such as logging.
 
-![Approach Overview](figures/model_performance.pdf?raw=true "Model performance")
+![Approach Overview](figures/model_performance.png?raw=true "Model performance")
 *Figure 8 - Improvement in deviance explained as a result of accessibility inclusion.*
 
 ### 6.2 Challenges and Limitations
@@ -103,7 +103,7 @@ The robustness of the analysis conducted within this project could be improved b
 ## 7 - Contributors 
 ### 7.1 Author
 
-- Campbell, Hamish. *(AI4ER Cohort-2021, University of Cambridge)*[<img align="right" src=report/figures/logos/GitHub-Mark.png width=30px>](https://github.com/Hamish-Cam)[<img align="right" src=figures/logos/ai4er.png width=25px>](https://ai4er-cdt.esc.cam.ac.uk/StaffDirectory/students-all/2021-students)
+- Campbell, Hamish. *(AI4ER Cohort-2021, University of Cambridge)*
 
 ### 7.2 Supervisors
 
