@@ -1,4 +1,4 @@
-﻿# Preprocessing Overview
+# Overview
 The preprocessing code is designed such that it can be run either locally or on the JASMIN HPC. The installation instructions given here are for running the code on JASMIN. 
 
 Following the steps outlined here and running the preprocessing code will result in the download of all required datasets and processing as required for further analysis. In addition, various plots are generated to help the user visualise the characteristics of the data for their specific species of interest. 
