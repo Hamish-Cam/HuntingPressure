@@ -1,10 +1,10 @@
+[<img align="right" src=figures/logos/ai4er_logo.png width=47px>](https://ai4er-cdt.esc.cam.ac.uk/)
+[<img align="right" src=figures/logos/UoC_logo.jpeg width=100px>](https://www.cam.ac.uk/)
+
 # Inclusion of hunting pressure in biodiversity assessment: a case study of birds in Thailand
 
  [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
  <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
-
-[<img align="right" src=figures/logos/ai4er_logo.png width=47px>](https://ai4er-cdt.esc.cam.ac.uk/)
-[<img align="right" src=figures/logos/UoC_logo.jpeg width=90px>](https://www.cam.ac.uk/)
 
 In each section of code contained within this repository, README files are provided that outline instructions for installing and using the relevant pieces of software for replicating and building on results found in this project. For replication, exact datasets can be found [here](https://doi.org/10.5281/zenodo.%20%20%206761830). All code has been written in R, the industry standard language for species distribution modelling. A large proportion of the code contained within this repository has been based upon research completed by the [Cornell Lab of Ornithology](https://cornelllabofornithology.github.io/ebird-best-practices/).
 
@@ -15,6 +15,7 @@ Hunting and trapping of birds is a major driver of biodiversity loss within Sout
 ### 2.1 Overview
 To test whether proxy indicators of hunting pressure (e.g. accessibility) are informative, a null-hypothesis significance testing (NHST) approach is taken [54, 55, 56]. This approach involves comparing the performance of two nested models: the null model and a complex model. The complex model differs from the null model exclusively due to the addition of an extra predictor. Thus, any improvement between the null and the complex model can be directly attributed to the inclusion of this predictor, with some statistical certainty provided by corresponding p-values. Within this project, relative abundance models containing only habitat based predictors and eBird effort variables are known as basic (null) models. Advanced (complex) models include an additional test proxy predictor of hunting pressure. In addition, study species are categorised as either “hunted” or “non-hunted”, providing two distinct groups for model training and testing. Partitioning of species data into these groups has two purposes. Firstly, any relative improvement between groups can be attributed to capturing the intended hunting pressure effect, as opposed to some other adverse anthropogenic process. Secondly, by considering the relative improvement, any performance gain simply as a result of adding more input features, can be avoided. 
 
+<img src="figures/approach_overview.png" height="60" width="60" >
 ![Approach Overview](figures/approach_overview.png?raw=true "Overview of approach taken within project.")
 *Figure 1 - An overview of the NHST approach taken during the project and the corresponding proposed hypothesis (see below).*
 
