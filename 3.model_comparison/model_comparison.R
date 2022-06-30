@@ -52,8 +52,8 @@ habitat_covariates <- c("elevation_median",
                         "pland_14_mosiac")
 
 # Setup dataframes for storing the relevant model performance metrics
-spearman_ranks <- data.frame(species=c(), baseline=c(), advanced=c())
-mad_ranks <- data.frame(species=c(), baseline=c(), advanced=c())
+spearman_ranks <- data.frame(species=c(), basic=c(), advanced=c())
+mad_ranks <- data.frame(species=c(), basic=c(), advanced=c())
 deviance_ranks <- data.frame(species=c(), deviance_diff=c(), p_value=c())
 
 
@@ -146,10 +146,10 @@ for (row in 1:nrow(species_data)){
   #### end ####
   
   
-  #### Baseline Model Fit ####
+  #### Basic Model Fit ####
   
   # Keep only the data to be used in the model
-  baseline_model_data <- lapply(split_data, 
+  basic_model_data <- lapply(split_data, 
                                 function(x) select(x,
                                    observation_count,
                                    # Effort covariates
@@ -159,7 +159,7 @@ for (row in 1:nrow(species_data)){
                                    habitat_covariates))
   
   # Get names of continuous covariates 
-  continuous_covs <- baseline_model_data$train %>% 
+  continuous_covs <- basic_model_data$train %>% 
     select(-observation_count, -protocol_type, -time_observations_started) %>% 
     names()
   
@@ -179,8 +179,8 @@ for (row in 1:nrow(species_data)){
   # Required to ensure hours 0 and 24 are mapped to each other 
   time_knots <- list(time_observations_started = seq(0, 24, length.out = k_time))
   
-  # Fit the baseline GAM model using a 'negative binomial' distribution 
-  NB_baseline_model <- gam(gam_formula, data = baseline_model_data$train, family = "nb", knots = time_knots)
+  # Fit the basic GAM model using a 'negative binomial' distribution 
+  NB_basic_model <- gam(gam_formula, data = basic_model_data$train, family = "nb", knots = time_knots)
   
   #### end ####
   
@@ -229,20 +229,20 @@ for (row in 1:nrow(species_data)){
   #### Model Comparison ####
   
   # Get the count data from the test sets
-  baseline_count_test_data <- select(baseline_model_data$test, obs = observation_count)
+  basic_count_test_data <- select(basic_model_data$test, obs = observation_count)
   adv_count_test_data <- select(adv_model_data$test, obs = observation_count)
   
   # Make predictions for test set using both GAM models
-  baseline_model_predictions <- predict(NB_baseline_model, baseline_model_data$test, type = "response") %>% 
-    tibble(model_type = "Baseline", pred = .) %>% 
-    bind_cols(baseline_count_test_data)
+  basic_model_predictions <- predict(NB_basic_model, basic_model_data$test, type = "response") %>% 
+    tibble(model_type = "Basic", pred = .) %>% 
+    bind_cols(basic_count_test_data)
   
   adv_model_predictions <- predict(NB_adv_model, adv_model_data$test, type = "response") %>% 
     tibble(model_type = "Advanced", pred = .) %>% 
     bind_cols(adv_count_test_data)
   
   # Combine predictions from each of the models
-  test_predictions <- bind_rows(baseline_model_predictions, adv_model_predictions) %>% 
+  test_predictions <- bind_rows(basic_model_predictions, adv_model_predictions) %>% 
     mutate(model_type = as_factor(model_type))
   
   # Compare models using Spearman’s rank correlation (higher = better)
@@ -260,8 +260,8 @@ for (row in 1:nrow(species_data)){
                 ungroup()
   
   # Find the percentage difference in deviance explained by the models 
-  metric_deviance <- (summary(NB_adv_model)$dev.expl - summary(NB_baseline_model)$dev.expl)*100
-  metric_p_value <- anova(NB_baseline_model, NB_adv_model, test = 'F')[2,'Pr(>Chi)']
+  metric_deviance <- (summary(NB_adv_model)$dev.expl - summary(NB_basic_model)$dev.expl)*100
+  metric_p_value <- anova(NB_basic_model, NB_adv_model, test = 'F')[2,'Pr(>Chi)']
   
   # Append the results to the relevant tables 
   spearman_ranks <- rbind(spearman_ranks, c(current_species$common_name, t(metric_spearman$rank_cor)))
@@ -272,7 +272,7 @@ for (row in 1:nrow(species_data)){
   #### end #### 
   
   
-  #### Baseline Model Analytics ####
+  #### Basic Model Analytics ####
   
   ## Count distributions (applies to both models)
   # Setup plot(s) of distribution of count numbers 
@@ -295,7 +295,7 @@ for (row in 1:nrow(species_data)){
   
   # Find optimal time of day for observing the species 
   seq_tod <- seq(0, 24, length.out = 300)
-  tod_df <- baseline_model_data$train %>% 
+  tod_df <- basic_model_data$train %>% 
     # Find average of continuous covariates 
     select(habitat_covariates) %>% 
     summarize_all(mean, na.rm = TRUE) %>% 
@@ -309,15 +309,15 @@ for (row in 1:nrow(species_data)){
     cbind(time_observations_started = seq_tod)
   
   # Predict counts at start times throughout the day
-  pred_tod <- predict(NB_baseline_model, newdata = tod_df, 
+  pred_tod <- predict(NB_basic_model, newdata = tod_df, 
                       type = "link", 
                       se.fit = TRUE) %>% 
     as_tibble() %>% 
     # Calculate backtransformed confidence limits
     transmute(time_observations_started = seq_tod,
-              pred = NB_baseline_model$family$linkinv(fit),
-              pred_lcl = NB_baseline_model$family$linkinv(fit - 1.96 * se.fit),
-              pred_ucl = NB_baseline_model$family$linkinv(fit + 1.96 * se.fit))
+              pred = NB_basic_model$family$linkinv(fit),
+              pred_lcl = NB_basic_model$family$linkinv(fit - 1.96 * se.fit),
+              pred_ucl = NB_basic_model$family$linkinv(fit + 1.96 * se.fit))
   
   # Optimal time of day is when lower conf interval is maximised
   t_peak <- pred_tod$time_observations_started[which.max(pred_tod$pred_lcl)]
@@ -333,7 +333,7 @@ for (row in 1:nrow(species_data)){
          y = "Predicted relative abundance",
          title = paste("Effect of observation start time on", current_species$common_name, "reporting"),
          subtitle = "Peak detectability shown as dashed blue line")
-  ggsave(file = file.path(data_folder, "analytics", sprintf("%s_baseline_optimal_time_of_day.pdf", short_code)))
+  ggsave(file = file.path(data_folder, "analytics", sprintf("%s_basic_optimal_time_of_day.pdf", short_code)))
     
   
   ## Abundance maps 
@@ -348,13 +348,13 @@ for (row in 1:nrow(species_data)){
     
     
   # Now make predictions over the complete surface 
-  pred <- predict(NB_baseline_model, newdata = pred_covariate_effort_data, 
+  pred <- predict(NB_basic_model, newdata = pred_covariate_effort_data, 
                   type = "link", 
                   se.fit = TRUE) %>% 
     as_tibble() %>% 
     # Get abundance and standard error in abundance 
-    transmute(abd = NB_baseline_model$family$linkinv(fit),
-              abd_se = NB_baseline_model$family$linkinv(se.fit)) %>%
+    transmute(abd = NB_basic_model$family$linkinv(fit),
+              abd_se = NB_basic_model$family$linkinv(se.fit)) %>%
     # Add to lat/lon from prediction surface
     bind_cols(pred_covariate_effort_data, .) %>% 
     select(latitude, longitude, abd, abd_se)
@@ -372,7 +372,7 @@ for (row in 1:nrow(species_data)){
   pred_map_proj <- projectRaster(pred_map, crs = 4326, method = "ngb")
   
   # Plot the data for each layer (abd and abd_se)
-  pdf(file = file.path(data_folder, "analytics", sprintf("%s_baseline_abundance_maps.pdf", short_code)))
+  pdf(file = file.path(data_folder, "analytics", sprintf("%s_basic_abundance_maps.pdf", short_code)))
   par(mfrow=c(1,2))
   for (nm in names(pred_map)) {
     r_plot <- pred_map_proj[[nm]]
@@ -621,15 +621,15 @@ for (row in 1:nrow(species_data)){
 
 ## Save the performance metrics for the two models  
 # Rename the columns of the dataframes containing the metrics 
-colnames(spearman_ranks) <- c("Species", "Baseline", "Advanced")
-colnames(mad_ranks) <- c("Species", "Baseline", "Advanced")
+colnames(spearman_ranks) <- c("Species", "Basic", "Advanced")
+colnames(mad_ranks) <- c("Species", "Basic", "Advanced")
 colnames(deviance_ranks) <- c("Species", "Deviance_diff", "p-value")
 
 # Append the mean values to the end of each column 
 spearman_ranks <- rbind(spearman_ranks, c("Mean", 
-                      mean(as.numeric(spearman_ranks$Baseline)), mean(as.numeric(spearman_ranks$Advanced))))
+                      mean(as.numeric(spearman_ranks$Basic)), mean(as.numeric(spearman_ranks$Advanced))))
 mad_ranks <- rbind(mad_ranks, c("Mean", 
-                  mean(as.numeric(mad_ranks$Baseline)), mean(as.numeric(mad_ranks$Advanced))))
+                  mean(as.numeric(mad_ranks$Basic)), mean(as.numeric(mad_ranks$Advanced))))
 deviance_ranks <- rbind(deviance_ranks, c("Mean", 
                   mean(as.numeric(deviance_ranks$Deviance_diff)), mean(as.numeric(deviance_ranks$'p-value'))))
 
