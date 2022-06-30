@@ -1,7 +1,7 @@
 # Hamish Campbell
 
-#> Compares the accuracy of the "standard" model without any non-habitat covariates
-#> with a model that includes such data i.e. pressure maps etc. 
+#> Compares the accuracy of the "basic" model, without hunting pressure proxies,
+#> with an "advanced" model that does
 #> 
 #> Heavily based on code written and explained here: 
 #> #> https://cornelllabofornithology.github.io/ebird-best-practices/abundance.html
