@@ -13,7 +13,7 @@ Hunting and trapping of birds is a major driver of biodiversity loss within Sout
 To test whether proxy indicators of hunting pressure (e.g. accessibility) are informative, a null-hypothesis significance testing (NHST) approach is taken [54, 55, 56]. This approach involves comparing the performance of two nested models: the null model and a complex model. The complex model differs from the null model exclusively due to the addition of an extra predictor. Thus, any improvement between the null and the complex model can be directly attributed to the inclusion of this predictor, with some statistical certainty provided by corresponding p-values. Within this project, relative abundance models containing only habitat based predictors and eBird effort variables are known as basic (null) models. Advanced (complex) models include an additional test proxy predictor of hunting pressure. In addition, study species are categorised as either “hunted” or “non-hunted”, providing two distinct groups for model training and testing. Partitioning of species data into these groups has two purposes. Firstly, any relative improvement between groups can be attributed to capturing the intended hunting pressure effect, as opposed to some other adverse anthropogenic process. Secondly, by considering the relative improvement, any performance gain simply as a result of adding more input features, can be avoided. 
 
 <p align="center">
-  <img src="figures/approach_overview.png" height="500" width="600" >
+  <img src="figures/approach_overview.png" height="450" width="540" >
 </p>
 *Figure 1 - An overview of the NHST approach taken during the project and the corresponding proposed hypothesis (see below).*
 
@@ -34,39 +34,52 @@ If the additional predictors are a suitable proxy for hunting, we predict that t
 #### 4.1.1 eBird Checklist Data
 For bird occurrence information, eBird checklist data is used. In addition to presence observations of a given target species, an additional sampling event data file was obtained, allowing the checklist data to be zero-filled. Citizen science data is commonly susceptible to various spatial and temporal biases [72, 46]. For example, users tend to submit more records near cities and on the weekends. To reduce the impact of these. biases, the eBird data was sub-sampled, keeping just one checklist per week in each 5km grid cell covering For bird occurrence information, eBird checklist data is used. In addition to presence observations of a Thailand. Additionally, the dataset was also filtered to remove outliers, such that unusual outings do not impact greatly on model performance. Only short checklists (less than 5 hours and 5km), after 2010, are considered in this project. An example map of eBird checklist observations taken within Thailand, for the Great Hornbill, is shown in Figure 3.3
 
-![Approach Overview](figures/checklist_map.png?raw=true "Map of Great Hornbill eBird observations.")
+<p align="center">
+  <img src="figures/checklist_map.png" height="450" width="450" >
+</p>
 *Figure 2 - An example map of eBird checklist observations taken within Thailand, for the Great Hornbill.*
 
 #### 4.1.2 Range Polygons
 To limit the area over which training and testing checklists are sampled from, we use the range polygons of each species. The range of a species is defined as the geographic area over which that species can be found [73]. However, range polygons provide a relatively crude estimate, with many species presence checklists found just outside the assessed range. Therefore, a buffer distance was added to the range polygon for each species. 100km was chosen as suitable a buffer region, ensuring that the majority of presence checklists are captured and ensuring model training and testing is manageable in terms of processing time. Figure 3.4a shows an example of a range polygon limited to Thailand, while Figure 3.4b shows its corresponding buffered equivalent.
 
-![Approach Overview](figures/range_maps.png?raw=true "Range maps for Scaly-breasted Partridge.")
+<p align="center">
+  <img src="figures/range_maps.png" height="300" width="500" >
+</p>
 *Figure 3 - An example of a range polygon limited to Thailand and its corresponding buffered equivalent.*
 
 ### 4.2 Habitat Predictors
 #### 4.2.1 Landcover Classification Data 
 Landcover type is an important habitat predictor of species abundance, since it provides information about the habitat types available to a species. Annual landcover data was obtained from NASA, who make use of MODIS satellite observations and classification algorithms, to categorise 1km pixels into one of 16 possible landcover types [64] - following the University of Maryland (UMD) classification scheme [74]. However, the habitat found at a single point does not provide useful information for predicting species abundance. The habitat present within the 5km region around checklist locations was determined by calculating the proportion of each landcover type. A diameter of 5km is appropriate given the checklist distance limit imposed on the eBird data, while still being a suitable ecological scale for analysing many bird species [52]. A map of neighbourhood landcover proportions, for urban areas, can be seen in Figure 3.5a.
 
-![Approach Overview](figures/urban_landdcover.png?raw=true "Urban coverage across Thailand 2020.")
+<p align="center">
+  <img src="figures/urban_landdcover.png" height="450" width="450" >
+</p>
 *Figure 4 - A map of neighbourhood landcover proportions within Thailand, for urban areas, in 2020.*
 
 #### 4.2.2 Elevation Data
 Elevation is an important habitat factor for determining species distributions [75]. A global map of elevation data, at a 1km resolution, was obtained from Amatulli et al. [76]. The median elevation within each checklist neighbourhood was calculated, to provide an additional environmental predictor for the models. Figure 3.5b shows a plot of elevation across Thailand, obtained using this method.
 
-![Approach Overview](figures/elevation_map.png?raw=true "Elevation map of Thailand.")
+<p align="center">
+  <img src="figures/elevation_map.png" height="450" width="450" >
+</p>
 *Figure 5 - A map of elevation values across Thailand.*
 
 ### 4.3 Non-Habitat Predictors 
 #### 4.3.1 Harfoot Pressure Maps 
 One possible predictor of H&T is the global hunting pressure map for birds developed by Harfoot et al. [1], which is shown in Figure 3.6a. Harfoot uses range polygons and threat information contained within the IUCN Red List, in combination with a statistical model, to derive the probability of a species, within a given 50km pixel, being under threat from H&T. Modelling data was collected by calculating the weighted mean value of hunting pressure within each 5km checklist neighbourhood. Figure 3.6b shows the result of this process for Thailand.
 
-![Approach Overview](figures/harfoot_maps.png?raw=true "Harfoot pressure maps.")
+<p align="center">
+  <img src="figures/harfoot_maps.png" height="300" width="500" >
+</p>
 *Figure 6 - Harfoot hunting pressure for birds, globally, and restricted to Thailand.*
 
 #### 4.3.2 Accessibility 
 Weiss et al. [77] developed a map of global accessibility, at 1km resolution - where accessibility is defined as the minimum travel time to an urban area of more than 50,000 people. Figure 3.7 shows accessibility values across Thailand for this dataset. Despite the difficulties in stating a causal relationship, accessibility provides a useful predictor of hunting pressure and a valuable sanity check for the outlined approach - since the relationship between hunting pressure and accessibility has been studied previously [36, 26].
 
-![Approach Overview](figures/access_map.png?raw=true "Accessibility map within Thailand")
+
+<p align="center">
+  <img src="figures/access_map.png" height="450" width="450" >
+</p>
 *Figure 7 - Minimum travel time to an urban area of >50,000 people (minutes).*
 
 ## 5 - Models
@@ -89,7 +102,9 @@ Considering goodness-of-fit, the Harfoot pressure maps produced non-coherent res
 
 The accessibility dataset, however, appears to show more coherent results for the hunted species group - suggesting the improvement in deviance explained can be trusted to a greater extent. According to this metric, the addition of the accessibility predictor showed approximately a two-fold improvement between partitioned groups. Despite the notable relative improvement, the absolute improvement remains small (0.256%) - providing a possible explanation as to why the prediction accuracy metrics do not show significant improvement between models. We conclude that the addition of accessibility, as a proxy indicator of hunting pressure, does improve model goodness-of-fit, however, the performance gain for prediction is negligible. This may partially be due to accessibility being a confounder - also influencing habitat through factors such as logging.
 
-![Approach Overview](figures/model_performance.png?raw=true "Model performance")
+<p align="center">
+  <img src="figures/model_performance.png.png" height="500" width="350" >
+</p>
 *Figure 8 - Improvement in deviance explained as a result of accessibility inclusion.*
 
 ### 6.2 Challenges and Limitations
