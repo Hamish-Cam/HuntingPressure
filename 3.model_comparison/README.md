@@ -1,13 +1,13 @@
-﻿# Get Abundance Map
-The *get_abundance.R* code is written in the R language and is designed such that it can be run either locally or on the JASMIN HPC. The installation instructions given here are for running the code on JASMIN. 
+﻿# Overview
+The *model_comparison.R* code is designed such that it can be run either locally or on the JASMIN HPC. The installation instructions given here are for running the code on JASMIN. Note: that preprocessing steps must be completed prior to using this code.
 
-Following the steps outlined here, after having completed the preprocessing steps, will result in a relative abundance map for the users species of choice. In addition, various plots are generated to help the user visualise the characteristics for their specific species of interest. 
+Comparison metrics for evaluating the basic and advanced models will be produced, as well as various plots to help the user visualise the characteristics of the data for their specific application. 
 
-The *get_abundance.R* script is the main code for preprocessing the data and should not need to be altered by the user (unless the model behaviour or characteristics of a given species are very different to most). The *config.R* script contains variables that the user should alter depending on the experiments they wish to carry out. 
+The *model_comparison.R* script is the main code for analysis and should not need to be altered by the user (unless the underlying functionality has to be changed). The *config.R* script contains variables that the user should alter depending on the experiments they wish to carry out. 
 
 
 # Required Data
-All of the required data for obtaining a relative abundance map can be obtained by running the *preprocessing.R* code previously. The required data can be found in the *output data* folder associated with this process. 
+All of the required data can be obtained by running the *preprocessing.R* code in advance. The required data can be found in the *output data* folder associated with preprocessing. 
 
 
 # JASMIN Setup 
@@ -22,53 +22,54 @@ The first step is to ensure the necessary R packages are installed on JASMIN:
 
 
 ## Directory Setup
-Within the project folder, create a folder for the abundance map data with the name *abun-SpeciesName*.  Make a subfolder within here named *input data* and copy the required data from the preprocessing step into this folder. 
+The correct directory structure must be setup for correct functionality. 
+ 1. Make a project folder for the *model_comparison.R*  and  *config.R*  files to live in
+ 2. Within the project folder, create a data folder (specified in config)
+ 3. Within the data folder, create a folder named  *input data*  (make sure to use this name). Place the required files (for each species) contained within the preprocessing *output data* folder here
 
 In summary, the directory structure should be as follows: 
     
     project folder
-        -> abun-<species name> folder
-            -> input data folder
-                -> gis-data.gpkg 
-                -> ebd_processed_output.csv 
-                -> landcover_and_elevation_checklists.csv 
-                -> landcover_and_elevation_prediction.csv 
-                -> prediction-surface.tif
-                -> prediction-surface.tif.aux.xml
+        -> data folder
+            -> input data 
+                -> gis-data.gpkg (each species)
+                -> ebd_processed_output.csv (each species)
+                -> covariate_checklists.csv (each species)
+                -> covariate_predictions.csv (each species) 
+                -> prediction-surface.tif (each species)
 
 
 # Expected Output
 After a run has been completed (see below), the following outputs will be generated and placed in the *output data* subfolder: 
-1. TIFF file containing the values of relative abundance across the area of interest: `abundance_map.tif`
-2. TIFF file containing the values of standard error across the area of interest: `abundance_map_uncertainty.tif`
+1. Spearman's rank correlation scores: `spearman_ranks.csv`
+2. MAD scores: `mad_ranks.csv`
+3. Deviance explained scores: `deviance_ranks.csv`
 
 In addition, various plots are generated to give the user insight into the characteristics of the data. These plots are placed in the *analytics* folder. The following plots are generated: 
-1. Species count distributions (histograms)
-2. Model covariate dependencies 
-3. Optimal time of day for observation
-4. Relative abundance and uncertainty maps
+4. Species count distributions (histograms)
+5. Proxy predictor fitted smooth plot
+7. Optimal time of day for observation plots (basic and advanced)
+8. Relative abundance and uncertainty prediction maps (basic and advanced)
 
 In summary, the final directory structure will be as follows: 
-            
-  
 
      project folder
-            -> abun-<species name> folder
-                -> input data folder
+            -> data folder
+                -> input data 
                     -> gis-data.gpkg 
                     -> ebd_processed_output.csv 
-                    -> landcover_and_elevation_checklists.csv 
-                    -> landcover_and_elevation_prediction.csv 
+                    -> covariate_checklists.csv 
+                    -> covariate_predictions.csv 
                     -> prediction-surface.tif
-                    -> prediction-surface.tif.aux.xml
                 -> output data
-                    -> abundance_map.tif
-                    -> abundance_map_uncertainty.tif
+                    -> spearman_ranks.csv
+                    -> mad_ranks.csv
+                    -> deviance_ranks.csv
                 -> analytics 
-                    -> count_distributions.png
-                    -> model_covariates_dependency.png
-                    -> optimal_time_of_day.png
-                    -> abundance_maps.png
+                    -> Species count distributions
+                    -> Proxy predictor fitted smooth plot
+                    -> Optimal time of day for observation plots 
+                    -> Relative abundance and uncertainty prediction maps
 
 
 
@@ -86,15 +87,15 @@ Once all of the above steps have been completed, the user is ready to start a ru
     #SBATCH --partition=test 
     #SBATCH -o %j.out 
     #SBATCH -e %j.err 
-    #SBATCH --time=04:00:00 
+    #SBATCH --time=01:00:00 
     #SBATCH --mem=0 
     
     # Must add R to workspace 
     module add jasr 
     
     # Go to relevant folder 
-    cd HuntingPressure/data_analysis/eBird 
+    cd HuntingPressure/3.model_comparison 
     
     # Execute the job in question 
-    Rscript get_abundance.R
+    Rscript model_comparison.R
 
