@@ -3,22 +3,8 @@
 # Calculation of presence proportions for selected provisional study species and 
 # Thailand landcover types
 
-library(lubridate)
-library(sf)
-library(raster)
-library(dggridR)
-library(pdp)
-library(mgcv)
-library(fitdistrplus)
-library(viridis)
-library(fields)
 library(tidyverse)
 library(auk)
-
-# Select which packages we want to take duplicated function names from
-select <- dplyr::select
-map <- purrr::map
-projection <- raster::projection
 
 # Load the variable values from the config file
 source("../1.preprocessing/config.R")
