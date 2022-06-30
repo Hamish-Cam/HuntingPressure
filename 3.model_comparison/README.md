@@ -46,10 +46,10 @@ After a run has been completed (see below), the following outputs will be genera
 3. Deviance explained scores: `deviance_ranks.csv`
 
 In addition, various plots are generated to give the user insight into the characteristics of the data. These plots are placed in the *analytics* folder. The following plots are generated: 
-4. Species count distributions (histograms)
-5. Proxy predictor fitted smooth plot
-7. Optimal time of day for observation plots (basic and advanced)
-8. Relative abundance and uncertainty prediction maps (basic and advanced)
+1. Species count distributions (histograms)
+2. Proxy predictor fitted smooth plot
+3. Optimal time of day for observation plots (basic and advanced)
+4. Relative abundance and uncertainty prediction maps (basic and advanced)
 
 In summary, the final directory structure will be as follows: 
 
