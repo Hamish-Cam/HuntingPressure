@@ -368,15 +368,6 @@ for (row in 1:nrow(species_data)){
     rasterize(pred_raster)
   pred_map <- pred_map[[-1]]
     
-  # Save prediction maps to output folder
-  writeRaster(pred_map[["abd"]], 
-              filename = file.path(data_folder, "output data", sprintf("%s_baseline_abundance_map.tif", short_code)),
-              overwrite = TRUE)
-  writeRaster(pred_map[["abd_se"]], 
-              filename = file.path(data_folder, "output data", sprintf("%s_baseline_abundance_map_uncertainty.tif", short_code)), 
-              overwrite = TRUE)
-    
-    
   # Change the CRS of the raster to match that of the GIS data for plotting
   pred_map_proj <- projectRaster(pred_map, crs = 4326, method = "ngb")
   
@@ -557,16 +548,7 @@ for (row in 1:nrow(species_data)){
     st_transform(crs = projection(pred_raster)) %>% 
     rasterize(pred_raster)
   pred_map <- pred_map[[-1]]
-  
-  # Save prediction maps to output folder
-  writeRaster(pred_map[["abd"]], 
-              filename = file.path(data_folder, "output data", sprintf("%s_advanced_abundance_map.tif", short_code)),
-              overwrite = TRUE)
-  writeRaster(pred_map[["abd_se"]], 
-              filename = file.path(data_folder, "output data", sprintf("%s_advanced_abundance_map_uncertainty.tif", short_code)), 
-              overwrite = TRUE)
-  
-  
+
   # Change the CRS of the raster to match that of the GIS data for plotting
   pred_map_proj <- projectRaster(pred_map, crs = 4326, method = "ngb")
   
@@ -652,9 +634,9 @@ deviance_ranks <- rbind(deviance_ranks, c("Mean",
                   mean(as.numeric(deviance_ranks$Deviance_diff)), mean(as.numeric(deviance_ranks$'p-value'))))
 
 # Save the performance metrics to the analytics folder 
-write.csv(spearman_ranks, file.path(data_folder, "analytics", "spearman_ranks.csv"), row.names = FALSE)
-write.csv(mad_ranks, file.path(data_folder, "analytics", "mad_ranks.csv"), row.names = FALSE)
-write.csv(deviance_ranks, file.path(data_folder, "analytics", "deviance_ranks.csv"), row.names = FALSE)
+write.csv(spearman_ranks, file.path(data_folder, "output data", "spearman_ranks.csv"), row.names = FALSE)
+write.csv(mad_ranks, file.path(data_folder, "output data", "mad_ranks.csv"), row.names = FALSE)
+write.csv(deviance_ranks, file.path(data_folder, "output data", "deviance_ranks.csv"), row.names = FALSE)
 
 
 
