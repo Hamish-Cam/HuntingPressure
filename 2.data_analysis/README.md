@@ -1,4 +1,4 @@
-﻿## Overview
+# Overview
 
 This script is used to obtain the presence proportion of study species and the occurrence proportion of landcover types. This script can only be run after first successfully running the preprocessing code. There is no need to move the processed data from its location within the *1.preprocessing* folder structure.
 
