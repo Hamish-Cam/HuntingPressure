@@ -15,8 +15,7 @@ Hunting and trapping of birds is a major driver of biodiversity loss within Sout
 ### 2.1 Overview
 To test whether proxy indicators of hunting pressure (e.g. accessibility) are informative, a null-hypothesis significance testing (NHST) approach is taken [54, 55, 56]. This approach involves comparing the performance of two nested models: the null model and a complex model. The complex model differs from the null model exclusively due to the addition of an extra predictor. Thus, any improvement between the null and the complex model can be directly attributed to the inclusion of this predictor, with some statistical certainty provided by corresponding p-values. Within this project, relative abundance models containing only habitat based predictors and eBird effort variables are known as basic (null) models. Advanced (complex) models include an additional test proxy predictor of hunting pressure. In addition, study species are categorised as either “hunted” or “non-hunted”, providing two distinct groups for model training and testing. Partitioning of species data into these groups has two purposes. Firstly, any relative improvement between groups can be attributed to capturing the intended hunting pressure effect, as opposed to some other adverse anthropogenic process. Secondly, by considering the relative improvement, any performance gain simply as a result of adding more input features, can be avoided. 
 
-<img src="figures/approach_overview.png" height="60" width="60" >
-![Approach Overview](figures/approach_overview.png?raw=true "Overview of approach taken within project.")
+<img src="figures/approach_overview.png" height="600" width="600" >
 *Figure 1 - An overview of the NHST approach taken during the project and the corresponding proposed hypothesis (see below).*
 
 ### 2.2 Taxa selection: Birds
