@@ -7,8 +7,7 @@ The *preprocessing.R* script is the main code for preprocessing the data and sho
 
 
 # Data Download
-For reproducing results, the user can download all required data from the Zenodo project page: [Zenodo project page](https://doi.org/10.5281/zenodo.  
-6761830).
+For reproducing results, the user can download all required data from the Zenodo project page: [Zenodo project page](https://doi.org/10.5281/zenodo.%20%20%206761830).
 
 For up-to-date data, the preprocessing code requires manual download of 7 datasets prior to running of the preprocessing code. Note that some of these datasets require an approved account before download is possible:
 1. [eBird Basic Dataset (EBD) - Sampling event data](https://ebird.org/data/download): Required for zero-filling checklist data (account setup required)
