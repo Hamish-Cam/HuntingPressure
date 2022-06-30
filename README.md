@@ -4,7 +4,7 @@
  <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
 [<img align="right" src=figures/logos/ai4er.png width=47px>](https://ai4er-cdt.esc.cam.ac.uk/)
-[<img align="right" src=figures/logos/UoC_logo.png width=60px>](https://www.cam.ac.uk/)
+[<img align="right" src=figures/logos/UoC_logo.jpeg width=60px>](https://www.cam.ac.uk/)
 
 In each section of code contained within this repository, README files are provided that outline instructions for installing and using the relevant pieces of software for replicating and building on results found in this project. For replication, exact datasets can be found [here](https://doi.org/10.5281/zenodo.%20%20%206761830). All code has been written in R, the industry standard language for species distribution modelling. A large proportion of the code contained within this repository has been based upon research completed by the [Cornell Lab of Ornithology](https://cornelllabofornithology.github.io/ebird-best-practices/).
 
